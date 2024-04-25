@@ -1,5 +1,14 @@
 <template>
-    <div>
-        <h1>This is main page, go to /example for example</h1>
+    <div class="flex flex-col w-[500px] place-content-center mx-auto">
+      <FileUploader />
     </div>
-</template>
+  </template>
+  
+  <script lang="ts">
+  export default {
+    data() {
+      return {};
+    },
+    methods: {},
+  };
+  </script>
