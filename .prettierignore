@@ -1,0 +1,12 @@
+# Ignore all files in the "dist" directory
+dist/
+
+# Ignore specific file
+config.js
+
+# Ignore all files with a .min.js extension
+*.min.js
+
+.nuxt
+.vscode
+node_modules
