@@ -4,6 +4,9 @@ export default defineNuxtConfig({
   modules: ["@nuxt/ui", '@nuxt/eslint', "@nuxtjs/supabase"],
   eslint: {
     checker: true,
+    config: {
+      stylistic: true,
+    }
   },
   supabase: {
     redirect: false,
