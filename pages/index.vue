@@ -4,11 +4,10 @@
   </div>
 </template>
 
-<script lang="ts">
-export default {
-  data() {
-    return {};
-  },
-  methods: {},
-};
+<script setup lang="ts">
+/* TRUE FOR PROD
+definePageMeta({
+  middleware: 'auth'
+})
+*/
 </script>

@@ -3,9 +3,6 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ["@nuxtjs/tailwindcss", "@nuxtjs/supabase"],
   supabase: {
-    redirect: false, // Change to TRUE for prod
-    /* redirectOptions: {
-      
-    } */
+    redirect: false,
   },
 });
