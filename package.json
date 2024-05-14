@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@nuxtjs/supabase": "1.2.1",
+    "@supabase/gotrue-js": "2.62.2",
     "nuxt": "^3.11.2",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0"
