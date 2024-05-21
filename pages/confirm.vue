@@ -6,7 +6,6 @@
 const user = useSupabaseUser()
 
 // Get redirect path from cookies
-const cookieName = useRuntimeConfig().public.supabase.cookieName
 const redirectPath = useCookie(`${cookieName}-redirect-path`).value
 
 watch(
