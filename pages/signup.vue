@@ -2,9 +2,11 @@
   <div>
     <UCard class="w-[450px] mx-auto mt-8 rounded-2xl">
       <template #header>
-        <h1 class="text-2xl font-bold">
-          Sign Up
-        </h1>
+        <!-- Use Tab to see whether user Signs up or Login -->
+        <UTabs
+          v-model="selectedTab"
+          :items="items"
+        />
       </template>
       <UForm
         :schema="schema"
@@ -58,7 +60,6 @@ const state = ref({
   email: '',
   password: '',
 })
-const successMessage = ref('')
 const errorMessage = ref('')
 
 const schema = object({
@@ -71,6 +72,28 @@ const schema = object({
 type Schema = InferType<typeof schema>
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
+  if (selectedTab.value === 1) {
+    return await login()
+  }
+  else {
+    return await signup()
+  }
+}
+
+async function login() {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: state.value.email,
+      password: state.value.password,
+    })
+    navigateTo('/confirm')
+  }
+  catch (error: any) {
+    errorMessage.value = error.message
+  }
+}
+
+async function signup() {
   try {
     const { data, error } = await supabase.auth.signUp({
       email: state.value.email,
@@ -85,4 +108,23 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     errorMessage.value = error.message
   }
 }
+
+// Login or signup functionality
+const items = [{ label: 'Sign up' }, { label: 'Login' }]
+const route = useRoute()
+const router = useRouter()
+
+const selectedTab = computed({
+  get() {
+    const index = items.findIndex(item => item.label === route.query.tab)
+    if (index === -1) {
+      return 0
+    }
+
+    return index
+  },
+  set(value) {
+    router.replace({ query: { tab: items[value].label } })
+  },
+})
 </script>
