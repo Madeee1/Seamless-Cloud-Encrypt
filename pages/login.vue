@@ -1,23 +1,28 @@
 <template>
   <div>
-    <button @click="signInWithOtp">Sign In with E-Mail</button>
-    <input v-model="email" type="email" />
+    <button @click="signInWithOtp">
+      Sign In with E-Mail
+    </button>
+    <input
+      v-model="email"
+      type="email"
+    >
   </div>
 </template>
 
 <script setup lang="ts">
-const supabase = useSupabaseClient();
-const email = ref("");
+const supabase = useSupabaseClient()
+const email = ref('')
 
 const signInWithOtp = async () => {
-  const redirectUrl = window.location.href + "confirm";
+  const redirectUrl = window.location.href + 'confirm'
 
   const { error } = await supabase.auth.signInWithOtp({
     email: email.value,
     options: {
-      emailRedirectTo: "http://localhost:3000/confirm",
+      emailRedirectTo: 'http://localhost:3000/confirm',
     },
-  });
-  if (error) console.log(error);
-};
+  })
+  if (error) console.log(error)
+}
 </script>
