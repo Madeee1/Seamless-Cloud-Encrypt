@@ -1,5 +1,9 @@
 <template>
-  <div>Waiting for login...</div>
+  <div class="flex justify-center items-center h-screen">
+    <div class="bg-gray-200 p-4 rounded-lg">
+      <p class="text-lg font-semibold">Waiting for email confirmation</p>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">

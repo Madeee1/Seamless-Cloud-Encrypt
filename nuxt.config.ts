@@ -9,7 +9,14 @@ export default defineNuxtConfig({
     },
   },
   supabase: {
-    redirect: false,
+    redirect: true,
+    redirectOptions: {
+      login: '/login',
+      callback: '/confirm',
+      include: undefined,
+      exclude: ['/', '/login', '/signup'],
+      cookieRedirect: true,
+    },
   },
   colorMode: {
     preference: 'light',
