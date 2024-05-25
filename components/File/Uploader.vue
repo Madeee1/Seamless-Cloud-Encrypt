@@ -27,7 +27,7 @@
       <p>You can download the encrypted file over here</p>
       <a
         :href="encryptedFileURL"
-        download="encrypted-file.bin"
+        download="newFilename + '.bin'"
       >Download</a>
       <p>{{ encryptedFileURL }}</p>
       <br>
@@ -37,7 +37,7 @@
       <p>You can download the DECRYPTED file over here</p>
       <a
         :href="decryptedFileURL"
-        download="ori-file.txt"
+        download="${oriFilename}.txt"
       >Download&Decrypt</a>
       <p>{{ decryptedFileURL }}</p>
       <br>
@@ -53,12 +53,19 @@ export default {
       encryptedFileURL: '',
       decryptedFileURL: '',
       keyPass: '',
-      initVector: '',
+      newFilename: '',
+      oriFilename: '',
     }
   },
   computed: {
     imagePreview() {
       return this.$refs.fileInput.files[0]
+    },
+    encryptedFilename() {
+      return this.newFilename + '.bin'
+    },
+    decryptedFilename() {
+      return this.oriFilename + '.txt'
     },
   },
   methods: {
@@ -107,16 +114,23 @@ export default {
       const file = this.$refs.fileInput.files[0]
       const cryptoKeyObj = await this.deriveKeyFromPassword(password, salt)
       const ivAndEncrypted = await this.encrypt(file, cryptoKeyObj)
+      const encryptedFilename = await this.encryptFilename(file.name, cryptoKeyObj)
+
+      const encryptedArray = new Uint8Array(encryptedFilename.encrypted)
+      const encryptedBase64 = btoa(String.fromCharCode.apply(null, encryptedArray))
+      console.log('encrypted filename ', encryptedBase64)
+      this.newFilename = encryptedBase64
 
       // Encrypted file is ArrayBuffer type, needs to be blob to be downloaded
-      console.log('iv for this file: ', ivAndEncrypted.iv)
-      this.initVector = ivAndEncrypted.iv
       const blobEncryptedFile = new Blob([ivAndEncrypted.encrypted], {
         type: 'application/octet-stream',
       })
       this.encryptedFileURL = URL.createObjectURL(blobEncryptedFile)
 
+      // Decrypt file, filename, and download
       const decryptedFile = await this.decrypt(ivAndEncrypted.encrypted, ivAndEncrypted.iv, cryptoKeyObj)
+      const decryptedFilename = await this.decrypt(encryptedFilename.encrypted, encryptedFilename.iv, cryptoKeyObj)
+      this.oriFilename = decryptedFilename
       const blobDecryptedFile = new Blob([decryptedFile], { type: 'text/plain' })
 
       this.decryptedFileURL = URL.createObjectURL(blobDecryptedFile)
@@ -164,9 +178,17 @@ export default {
       )
       return { iv, encrypted }
     },
+    async encryptFilename(string, key) {
+      const encoded = new TextEncoder().encode(string)
+      const iv = crypto.getRandomValues(new Uint8Array(12))
+      const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded)
+
+      return { iv, encrypted }
+    },
     async decrypt(encrypted, iv, key) {
-      const decrypted = await crypto.subtle.decrypt({ 'name': 'AES-GCM', 'iv': iv }, key, encrypted)
+      const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, encrypted)
       const decoded = new TextDecoder().decode(decrypted)
+
       return decoded
     },
   },
