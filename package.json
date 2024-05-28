@@ -19,6 +19,7 @@
     "@supabase/gotrue-js": "2.62.2",
     "nuxt": "^3.11.2",
     "nuxt-security": "^2.0.0-beta.5",
+    "pinia": "^2.1.7",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0",
     "yup": "^1.4.0"
