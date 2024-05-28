@@ -15,12 +15,10 @@
       </form>
     </div>
     <div>
-      <p>You can download the encrypted file over here</p>
-      <a
-        :href="encryptedFileURL"
-        download="encryptedFile.txt"
-      >Download</a>
-      <p>{{ encryptedFileURL }}</p>
+      <button
+        v-if="encryptedFileURL"
+        @click="downloadFile">Download
+      </button>
     </div>
   </div>
 </template>
@@ -31,7 +29,6 @@ import { useObjectStore } from './store.js'
 export default {
   data() {
     return {
-      JWK: { test: 'test' },
       encryptedFileURL: '',
       decryptedFileURL: '',
       keyPass: '',
@@ -43,16 +40,17 @@ export default {
     imagePreview() {
       return this.$refs.fileInput.files[0]
     },
-    encryptedFilename() {
-      return this.newFilename + '.bin'
-    },
-    decryptedFilename() {
-      return this.oriFilename + '.txt'
-    },
   },
   methods: {
     generateDownloadFilename() {
       return this.newFilename
+    },
+    downloadFile() {
+      const a = document.createElement('a')
+      a.href = this.encryptedFileURL
+      a.download = this.newFilename
+      document.body.appendChild(a)
+      a.click()
     },
     async deriveKeyFromPassword(password, salt) {
       const encoder = new TextEncoder()
@@ -80,7 +78,6 @@ export default {
       return key
     },
     async handleFileUpload() {
-
       // derive key from password
       const password = this.keyPass
       const salt = new Uint8Array([1, 2, 3, 4])
@@ -89,11 +86,24 @@ export default {
       // convert file to arraybuffer
       const file = this.$refs.fileInput.files[0]
       const fileAB = await file.arrayBuffer()
+
       // generate iv
       const iv = crypto.getRandomValues(new Uint8Array(12))
 
       // encrypt data
       const encryptedData = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKeyObj, fileAB)
+
+      // get filename and iv for filename encryption
+      const encodedFilename = new TextEncoder().encode(file.name)
+      const filenameiv = crypto.getRandomValues(new Uint8Array(12))
+
+      // encrypt filename
+      const encryptedFilename = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: filenameiv }, cryptoKeyObj, encodedFilename)
+
+      // convert encrypted filename to readable string
+      const filenameArray = new Uint8Array(encryptedFilename)
+      const newFilename = btoa(String.fromCharCode.apply(null, filenameArray)) + '.bin'
+      this.newFilename = newFilename
 
       // create blob for file download, concatenate iv into encrypted file
       const encryptedBlob = new Blob([iv, encryptedData], { type: 'application/octet-stream' })
