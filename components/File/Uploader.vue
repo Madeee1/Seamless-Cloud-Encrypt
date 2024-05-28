@@ -27,25 +27,27 @@
       <p>You can download the encrypted file over here</p>
       <a
         :href="encryptedFileURL"
-        download="newFilename + '.bin'"
+        download="encryptedFile.txt"
       >Download</a>
       <p>{{ encryptedFileURL }}</p>
       <br>
       <br>
     </div>
     <div>
-      <p>You can download the DECRYPTED file over here</p>
+      <!-- <p>You can download the DECRYPTED file over here</p>
       <a
         :href="decryptedFileURL"
-        download="${oriFilename}.txt"
+        download="decryptedFile.txt"
       >Download&Decrypt</a>
-      <p>{{ decryptedFileURL }}</p>
+      <p>{{ decryptedFileURL }}</p> -->
       <br>
     </div>
   </div>
 </template>
 
 <script>
+import { useObjectStore } from './store.js'
+
 export default {
   data() {
     return {
@@ -69,6 +71,13 @@ export default {
     },
   },
   methods: {
+    setObject(newObject) {
+      const objectStore = useObjectStore()
+      objectStore.setObject(newObject)
+    },
+    generateDownloadFilename() {
+      return this.newFilename
+    },
     async deriveKeyFromPassword(password, salt) {
       const encoder = new TextEncoder()
       const encodedPassword = encoder.encode(password)
@@ -111,29 +120,37 @@ export default {
     async handleFileUpload() {
       const password = this.keyPass
       const salt = new Uint8Array([1, 2, 3, 4])
-      const file = this.$refs.fileInput.files[0]
       const cryptoKeyObj = await this.deriveKeyFromPassword(password, salt)
-      const ivAndEncrypted = await this.encrypt(file, cryptoKeyObj)
-      const encryptedFilename = await this.encryptFilename(file.name, cryptoKeyObj)
+      const file = this.$refs.fileInput.files[0]
 
-      const encryptedArray = new Uint8Array(encryptedFilename.encrypted)
-      const encryptedBase64 = btoa(String.fromCharCode.apply(null, encryptedArray))
-      console.log('encrypted filename ', encryptedBase64)
-      this.newFilename = encryptedBase64
+      // const cryptoKeyObj = await this.deriveKeyFromPassword(password, salt)
+      // const plaintext = new Uint8Array(reader.result);
+      // const ivAndEncrypted = await this.encrypt(plaintext, cryptoKeyObj)
+      // console.log(typeof ivAndEncrypted)
+      // console.log(ivAndEncrypted)
 
-      // Encrypted file is ArrayBuffer type, needs to be blob to be downloaded
-      const blobEncryptedFile = new Blob([ivAndEncrypted.encrypted], {
-        type: 'application/octet-stream',
-      })
-      this.encryptedFileURL = URL.createObjectURL(blobEncryptedFile)
+      // // Encrypted file is ArrayBuffer type, needs to be blob to be downloaded
+      // const blobEncryptedFile = new Blob([ivAndEncrypted], {
+      //   // type: 'text/plain',
+      //   type: 'application/octet-stream',
+      //   // type: file.type,
+      // })
+      // this.encryptedFileURL = URL.createObjectURL(blobEncryptedFile)
 
-      // Decrypt file, filename, and download
-      const decryptedFile = await this.decrypt(ivAndEncrypted.encrypted, ivAndEncrypted.iv, cryptoKeyObj)
-      const decryptedFilename = await this.decrypt(encryptedFilename.encrypted, encryptedFilename.iv, cryptoKeyObj)
-      this.oriFilename = decryptedFilename
-      const blobDecryptedFile = new Blob([decryptedFile], { type: 'text/plain' })
+      const fileAB = await file.arrayBuffer()
+      const iv = crypto.getRandomValues(new Uint8Array(12))
+      const encryptedData = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKeyObj, fileAB)
+      const encryptedBlob = new Blob([iv, encryptedData], { type: 'application/octet-stream' })
+      this.encryptedFileURL = URL.createObjectURL(encryptedBlob)
 
-      this.decryptedFileURL = URL.createObjectURL(blobDecryptedFile)
+      const testStore = useObjectStore()
+      testStore.object = cryptoKeyObj
+      console.log('key from pinia = ')
+      console.log(testStore.object)
+      console.log(typeof testStore.object)
+      if (cryptoKeyObj === testStore.object) {
+        console.log('original key and one from pinia is exactly the same')
+      }
     },
     async generateKey() {
       const returnValue = await crypto.subtle.generateKey(
@@ -166,7 +183,7 @@ export default {
     async encrypt(file, key) {
       const iv = crypto.getRandomValues(new Uint8Array(12))
       // file needs to be encoded from File Blob into ArrayBuffer
-      const fileAB = await file.arrayBuffer()
+      // const fileAB = await file.arrayBuffer()
 
       const encrypted = await crypto.subtle.encrypt(
         {
@@ -174,7 +191,7 @@ export default {
           iv,
         },
         key,
-        fileAB,
+        file,
       )
       return { iv, encrypted }
     },
