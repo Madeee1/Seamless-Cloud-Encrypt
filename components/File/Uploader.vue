@@ -15,32 +15,12 @@
       </form>
     </div>
     <div>
-      <p>Generate JWK Key</p>
-      <button @click="generateKey()">
-        Generate Key
-      </button>
-      <div v-if="Object.keys(JWK).length">
-        {{ JWK }}
-      </div>
-    </div>
-    <div>
       <p>You can download the encrypted file over here</p>
       <a
         :href="encryptedFileURL"
         download="encryptedFile.txt"
       >Download</a>
       <p>{{ encryptedFileURL }}</p>
-      <br>
-      <br>
-    </div>
-    <div>
-      <!-- <p>You can download the DECRYPTED file over here</p>
-      <a
-        :href="decryptedFileURL"
-        download="decryptedFile.txt"
-      >Download&Decrypt</a>
-      <p>{{ decryptedFileURL }}</p> -->
-      <br>
     </div>
   </div>
 </template>
@@ -71,10 +51,6 @@ export default {
     },
   },
   methods: {
-    setObject(newObject) {
-      const objectStore = useObjectStore()
-      objectStore.setObject(newObject)
-    },
     generateDownloadFilename() {
       return this.newFilename
     },
@@ -88,7 +64,6 @@ export default {
         false,
         ['deriveKey'],
       )
-
       const key = await crypto.subtle.deriveKey(
         {
           name: 'PBKDF2',
@@ -104,96 +79,29 @@ export default {
 
       return key
     },
-    async printPass() {
-      const password = this.keyPass
-      const salt = new Uint8Array([1, 2, 3, 4]) // You should generate a random salt
-      this.deriveKeyFromPassword(password, salt)
-        .then(key => {
-          console.log('Derived key:', key)
-        // Key successfully derived, you can proceed with encryption/decryption
-        })
-        .catch(error => {
-          console.error('Error deriving key:', error)
-        // Key derivation failed, handle the error
-        })
-    },
     async handleFileUpload() {
+
+      // derive key from password
       const password = this.keyPass
       const salt = new Uint8Array([1, 2, 3, 4])
       const cryptoKeyObj = await this.deriveKeyFromPassword(password, salt)
+
+      // convert file to arraybuffer
       const file = this.$refs.fileInput.files[0]
-
-      // const cryptoKeyObj = await this.deriveKeyFromPassword(password, salt)
-      // const plaintext = new Uint8Array(reader.result);
-      // const ivAndEncrypted = await this.encrypt(plaintext, cryptoKeyObj)
-      // console.log(typeof ivAndEncrypted)
-      // console.log(ivAndEncrypted)
-
-      // // Encrypted file is ArrayBuffer type, needs to be blob to be downloaded
-      // const blobEncryptedFile = new Blob([ivAndEncrypted], {
-      //   // type: 'text/plain',
-      //   type: 'application/octet-stream',
-      //   // type: file.type,
-      // })
-      // this.encryptedFileURL = URL.createObjectURL(blobEncryptedFile)
-
       const fileAB = await file.arrayBuffer()
+      // generate iv
       const iv = crypto.getRandomValues(new Uint8Array(12))
+
+      // encrypt data
       const encryptedData = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKeyObj, fileAB)
+
+      // create blob for file download, concatenate iv into encrypted file
       const encryptedBlob = new Blob([iv, encryptedData], { type: 'application/octet-stream' })
       this.encryptedFileURL = URL.createObjectURL(encryptedBlob)
 
+      // upload key to pinia store
       const testStore = useObjectStore()
       testStore.object = cryptoKeyObj
-      console.log('key from pinia = ')
-      console.log(testStore.object)
-      console.log(typeof testStore.object)
-      if (cryptoKeyObj === testStore.object) {
-        console.log('original key and one from pinia is exactly the same')
-      }
-    },
-    async generateKey() {
-      const returnValue = await crypto.subtle.generateKey(
-        {
-          name: 'AES-GCM',
-          length: 256,
-        },
-        true,
-        ['encrypt', 'decrypt'],
-      )
-      await this.exportKey(returnValue)
-      return returnValue
-    },
-    async exportKey(key) {
-      const JWK = await crypto.subtle.exportKey('jwk', key)
-      this.JWK = JWK
-    },
-    async importKey(jwk) {
-      return await crypto.subtle.importKey(
-        'jwk',
-        jwk,
-        {
-          name: 'AES-GCM',
-          length: 256,
-        },
-        true,
-        ['encrypt', 'decrypt'],
-      )
-    },
-    async encrypt(file, key) {
-      const iv = crypto.getRandomValues(new Uint8Array(12))
-      // file needs to be encoded from File Blob into ArrayBuffer
-      // const fileAB = await file.arrayBuffer()
-
-      const encrypted = await crypto.subtle.encrypt(
-        {
-          name: 'AES-GCM',
-          iv,
-        },
-        key,
-        file,
-      )
-      return { iv, encrypted }
     },
     async encryptFilename(string, key) {
       const encoded = new TextEncoder().encode(string)
@@ -201,12 +109,6 @@ export default {
       const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded)
 
       return { iv, encrypted }
-    },
-    async decrypt(encrypted, iv, key) {
-      const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, encrypted)
-      const decoded = new TextDecoder().decode(decrypted)
-
-      return decoded
     },
   },
 }
