@@ -1,7 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
-  modules: ['@nuxt/ui', '@nuxt/eslint', '@nuxtjs/supabase', 'nuxt-security'],
+  modules: ['@nuxt/ui', '@nuxt/eslint', '@nuxtjs/supabase', 'nuxt-security', '@nuxtjs/robots'],
   eslint: {
     checker: true,
     config: {
@@ -26,5 +26,17 @@ export default defineNuxtConfig({
       crossOriginEmbedderPolicy: process.env.NODE_ENV === 'development' ? 'unsafe-none' : 'require-corp',
     },
     removeLoggers: process.env.NODE_ENV === 'development' ? false : undefined,
+  },
+  robots: {
+    rules: [
+      {
+        UserAgent: '*',
+        Disallow: process.env.NODE_ENV === 'production' ? '/dashboard/' : '/',
+      },
+      {
+        UserAgent: '*',
+        Disallow: process.env.NODE_ENV === 'production' ? '/confirm' : '/',
+      },
+    ],
   },
 })
