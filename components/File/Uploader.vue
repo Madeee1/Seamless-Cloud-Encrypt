@@ -90,9 +90,7 @@ export default {
       const encryptedData = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKeyObj, fileAB)
 
       // get filename and iv for filename encryption
-      console.log('original filename = ', file.name )
       const encodedFilename = new TextEncoder().encode(file.name)
-      console.log('encoded filename = ', encodedFilename)
       const filenameiv = crypto.getRandomValues(new Uint8Array(12))
 
       // encrypt filename
