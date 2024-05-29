@@ -6,6 +6,7 @@
     <input
       ref="fileInput"
       type="file"
+      multiple
       @change="handleFileUpload"
     >
     <div>
@@ -15,17 +16,21 @@
         @click="downloadFile">Download
       </button>
     </div>
+    <div v-for="(file, index) in originalFilename" :key="index">
+      <a :href="decryptedFileURL[index]" :download="file">Download -> {{ file }}</a>
+    </div>
   </div>
 </template>
 
 <script>
-import { useObjectStore } from './store'
+import { useVaultStore } from '@/stores/vault'
 
 export default {
   data() {
     return {
-      decryptedFileURL: '',
-      originalFilename: '',
+      files: [],
+      decryptedFileURL: [],
+      originalFilename: [],
     }
   },
   computed: {
@@ -42,42 +47,50 @@ export default {
       a.click()
     },
     async handleFileUpload() {
-      // convert file to arraybuffer
-      const file = this.$refs.fileInput.files[0]
-      const encryptedData = await file.arrayBuffer()
+      this.files = Array.from(this.$refs.fileInput.files)
 
-      // get key and filename from pinia store
-      const passStore = useObjectStore()
-      const cryptoKeyObj = passStore.object
-      const encryptedFilename = passStore.filename
+      for(let i = 0; i < this.files.length; i++) {
+        // convert file to arraybuffer
+        const file = this.files[i]
+        const encryptedData = await file.arrayBuffer()
 
-      // extract filename iv from encrypted file
-      const filenameivBuffer = encryptedData.slice(0, 12)
-      const filenameiv = new Uint8Array(filenameivBuffer)
+        // get key and filename from pinia store
+        const vaultStore = useVaultStore()
+        const cryptoKeyObj = vaultStore.key
 
-      // extract iv from encrypted file
-      const ivBuffer = encryptedData.slice(12, 24)
-      const iv = new Uint8Array(ivBuffer)
+        // extract index of orignal encrypted filename
+        const indexBuffer = encryptedData.slice(0,1)
+        const index = new TextDecoder().decode(indexBuffer)
+        const encryptedFilename = vaultStore.filenameArray[index]
 
-      // extract encrypted content from encrypted file
-      const ciphertext = encryptedData.slice(24)
-      
-      // decrypt filename
-      try {
-        const decryptedFilename = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: filenameiv }, cryptoKeyObj, encryptedFilename)
-        const originalFilename = new TextDecoder().decode(decryptedFilename)
-        this.originalFilename = originalFilename
-      } catch (error) {
-        console.error('error during filename decryption: ', error)
-      }
+        // extract filename iv from encrypted file
+        const filenameivBuffer = encryptedData.slice(1, 13)
+        const filenameiv = new Uint8Array(filenameivBuffer)
 
-      // decrypt file and create download URL
-      try {
-        const decryptedData = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, cryptoKeyObj, ciphertext)
-        const decryptedBlob = new Blob([decryptedData], { type: 'text/plain' })
-        this.decryptedFileURL = URL.createObjectURL(decryptedBlob)
-      } catch (error) {
-        console.error('error during content decryption: ', error)
+        // extract iv from encrypted file
+        const ivBuffer = encryptedData.slice(13, 25)
+        const iv = new Uint8Array(ivBuffer)
+
+        // extract encrypted content from encrypted file
+        const ciphertext = encryptedData.slice(25)
+        
+        // decrypt filename
+        try {
+          const decryptedFilename = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: filenameiv }, cryptoKeyObj, encryptedFilename)
+          const originalFilename = new TextDecoder().decode(decryptedFilename)
+          this.originalFilename.push(originalFilename)
+        } catch (error) {
+          console.error('error during filename decryption: ', error)
+        }
+
+        // decrypt file and create download URL
+        try {
+          const decryptedData = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, cryptoKeyObj, ciphertext)
+          const decryptedBlob = new Blob([decryptedData], { type: 'text/plain' })
+          this.decryptedFileURL.push(URL.createObjectURL(decryptedBlob))
+        } catch (error) {
+          console.error('error during content decryption: ', error)
+        }
       }
     },
   },

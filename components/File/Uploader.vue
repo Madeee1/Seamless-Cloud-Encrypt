@@ -5,6 +5,7 @@
       <input
         ref="fileInput"
         type="file"
+        multiple
         @change="handleFileUpload"
       >
     </div>
@@ -14,25 +15,22 @@
         <input v-model="keyPass" type="text">
       </form>
     </div>
-    <div>
-      <button
-        v-if="encryptedFileURL"
-        @click="downloadFile">Download
-      </button>
+    <div v-for="(file, index) in newFilename" :key="index">
+      <a :href="encryptedFileURL[index]" :download="file">Download -> {{ file }}</a>
     </div>
   </div>
 </template>
 
 <script>
-import { useObjectStore } from './store.js'
+import { useVaultStore } from '@/stores/vault'
 
 export default {
   data() {
     return {
-      encryptedFileURL: '',
-      decryptedFileURL: '',
+      files: [],
+      encryptedFileURL: [],
       keyPass: '',
-      newFilename: '',
+      newFilename: [],
     }
   },
   computed: {
@@ -42,11 +40,13 @@ export default {
   },
   methods: {
     downloadFile() {
-      const a = document.createElement('a')
-      a.href = this.encryptedFileURL
-      a.download = this.newFilename
-      document.body.appendChild(a)
-      a.click()
+      for (let i = 0; i < this.encryptedFileURL.length; i++) {
+        const a = document.createElement('a')
+        a.href = this.encryptedFileURL
+        a.download = this.newFilename
+        document.body.appendChild(a)
+        a.click()
+      }
     },
     async deriveKeyFromPassword(password, salt) {
       const encoder = new TextEncoder()
@@ -74,41 +74,46 @@ export default {
       return key
     },
     async handleFileUpload() {
-      // derive key from password
-      const password = this.keyPass
-      const salt = new Uint8Array([1, 2, 3, 4])
-      const cryptoKeyObj = await this.deriveKeyFromPassword(password, salt)
+      this.files = Array.from(this.$refs.fileInput.files)
 
-      // convert file to arraybuffer
-      const file = this.$refs.fileInput.files[0]
-      const fileAB = await file.arrayBuffer()
+      for(let i = 0; i < this.files.length; i++) {
+        // derive key from password
+        const password = this.keyPass
+        const salt = new Uint8Array([1, 2, 3, 4])
+        const cryptoKeyObj = await this.deriveKeyFromPassword(password, salt)
 
-      // generate iv
-      const iv = crypto.getRandomValues(new Uint8Array(12))
+        // convert file to arraybuffer
+        const file = this.files[i]
+        const fileAB = await file.arrayBuffer()
 
-      // encrypt data
-      const encryptedData = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKeyObj, fileAB)
+        // generate iv
+        const iv = crypto.getRandomValues(new Uint8Array(12))
 
-      // get filename and iv for filename encryption
-      const encodedFilename = new TextEncoder().encode(file.name)
-      const filenameiv = crypto.getRandomValues(new Uint8Array(12))
+        // encrypt data
+        const encryptedData = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKeyObj, fileAB)
 
-      // encrypt filename
-      const encryptedFilename = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: filenameiv }, cryptoKeyObj, encodedFilename)
+        // get filename and iv for filename encryption
+        const encodedFilename = new TextEncoder().encode(file.name)
+        const filenameiv = crypto.getRandomValues(new Uint8Array(12))
 
-      // convert encrypted filename to readable string
-      const filenameArray = new Uint8Array(encryptedFilename)
-      const newFilename = btoa(String.fromCharCode.apply(null, filenameArray)) + '.bin'
-      this.newFilename = newFilename
+        // encrypt filename
+        const encryptedFilename = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: filenameiv }, cryptoKeyObj, encodedFilename)
 
-      // upload key to pinia store
-      const testStore = useObjectStore()
-      testStore.object = cryptoKeyObj
-      testStore.filename = encryptedFilename
+        // convert encrypted filename to readable string
+        const filenameArray = new Uint8Array(encryptedFilename)
+        const filenameString = String.fromCharCode.apply(null, filenameArray)
+        const newFilename = btoa(filenameString) + '.bin'
+        this.newFilename.push(newFilename)
 
-      // create blob for file download, concatenate filenameiv and iv into encrypted file
-      const encryptedBlob = new Blob([filenameiv, iv, encryptedData], { type: 'application/octet-stream' })
-      this.encryptedFileURL = URL.createObjectURL(encryptedBlob)
+        // upload key to pinia store
+        const vaultStore = useVaultStore()
+        vaultStore.setKey(cryptoKeyObj)
+        vaultStore.addFilename(encryptedFilename)
+
+        // create blob for file download, concatenate filenameiv and iv into encrypted file
+        const encryptedBlob = new Blob([i, filenameiv, iv, encryptedData], { type: 'application/octet-stream' })
+        this.encryptedFileURL.push(URL.createObjectURL(encryptedBlob))
+      }
     },
   },
 }
