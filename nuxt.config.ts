@@ -1,7 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
-  modules: ['@nuxt/ui', '@nuxt/eslint', '@nuxtjs/supabase'],
+  modules: ['@nuxt/ui', '@nuxt/eslint', '@nuxtjs/supabase', 'nuxt-security'],
   eslint: {
     checker: true,
     config: {
@@ -20,5 +20,11 @@ export default defineNuxtConfig({
   },
   colorMode: {
     preference: 'light',
+  },
+  security: {
+    headers: {
+      crossOriginEmbedderPolicy: process.env.NODE_ENV === 'development' ? 'unsafe-none' : 'require-corp',
+    },
+    removeLoggers: process.env.NODE_ENV === 'development' ? false : undefined,
   },
 })
