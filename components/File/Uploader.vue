@@ -41,9 +41,6 @@ export default {
     },
   },
   methods: {
-    generateDownloadFilename() {
-      return this.newFilename
-    },
     downloadFile() {
       const a = document.createElement('a')
       a.href = this.encryptedFileURL
@@ -114,13 +111,6 @@ export default {
       // create blob for file download, concatenate filenameiv and iv into encrypted file
       const encryptedBlob = new Blob([filenameiv, iv, encryptedData], { type: 'application/octet-stream' })
       this.encryptedFileURL = URL.createObjectURL(encryptedBlob)
-    },
-    async encryptFilename(string, key) {
-      const encoded = new TextEncoder().encode(string)
-      const iv = crypto.getRandomValues(new Uint8Array(12))
-      const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded)
-
-      return { iv, encrypted }
     },
   },
 }

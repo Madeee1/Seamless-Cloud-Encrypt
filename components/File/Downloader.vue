@@ -42,7 +42,6 @@ export default {
       a.click()
     },
     async handleFileUpload() {
-
       // convert file to arraybuffer
       const file = this.$refs.fileInput.files[0]
       const encryptedData = await file.arrayBuffer()
