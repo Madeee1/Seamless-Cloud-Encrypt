@@ -1,13 +1,10 @@
 <template>
   <div>
-    DASHBOARD
+    <FileUploader />
+    <FileDownloader />
   </div>
 </template>
 
-<script lang="ts" setup>
+<script setup>
 
 </script>
-
-<style>
-
-</style>

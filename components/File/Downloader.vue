@@ -13,11 +13,19 @@
       <p>You can download the decrypted file over here</p>
       <button
         v-if="decryptedFileURL"
-        @click="downloadFile">Download
+        @click="downloadFile"
+      >
+        Download
       </button>
     </div>
-    <div v-for="(file, index) in originalFilename" :key="index">
-      <a :href="decryptedFileURL[index]" :download="file">Download -> {{ file }}</a>
+    <div
+      v-for="(file, index) in originalFilename"
+      :key="index"
+    >
+      <a
+        :href="decryptedFileURL[index]"
+        :download="file"
+      >Download -> {{ file }}</a>
     </div>
   </div>
 </template>
@@ -49,7 +57,7 @@ export default {
     async handleFileUpload() {
       this.files = Array.from(this.$refs.fileInput.files)
 
-      for(let i = 0; i < this.files.length; i++) {
+      for (let i = 0; i < this.files.length; i++) {
         // convert file to arraybuffer
         const file = this.files[i]
         const encryptedData = await file.arrayBuffer()
@@ -59,7 +67,7 @@ export default {
         const cryptoKeyObj = vaultStore.key
 
         // extract index of orignal encrypted filename
-        const indexBuffer = encryptedData.slice(0,1)
+        const indexBuffer = encryptedData.slice(0, 1)
         const index = new TextDecoder().decode(indexBuffer)
         const encryptedFilename = vaultStore.filenameArray[index]
 
@@ -73,13 +81,14 @@ export default {
 
         // extract encrypted content from encrypted file
         const ciphertext = encryptedData.slice(25)
-        
+
         // decrypt filename
         try {
           const decryptedFilename = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: filenameiv }, cryptoKeyObj, encryptedFilename)
           const originalFilename = new TextDecoder().decode(decryptedFilename)
           this.originalFilename.push(originalFilename)
-        } catch (error) {
+        }
+        catch (error) {
           console.error('error during filename decryption: ', error)
         }
 
@@ -88,7 +97,8 @@ export default {
           const decryptedData = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, cryptoKeyObj, ciphertext)
           const decryptedBlob = new Blob([decryptedData], { type: 'text/plain' })
           this.decryptedFileURL.push(URL.createObjectURL(decryptedBlob))
-        } catch (error) {
+        }
+        catch (error) {
           console.error('error during content decryption: ', error)
         }
       }

@@ -12,11 +12,20 @@
     <div>
       <form>
         <label for="keyPass">Password: </label>
-        <input v-model="keyPass" type="text">
+        <input
+          v-model="keyPass"
+          type="text"
+        >
       </form>
     </div>
-    <div v-for="(file, index) in newFilename" :key="index">
-      <a :href="encryptedFileURL[index]" :download="file">Download -> {{ file }}</a>
+    <div
+      v-for="(file, index) in newFilename"
+      :key="index"
+    >
+      <a
+        :href="encryptedFileURL[index]"
+        :download="file"
+      >Download -> {{ file }}</a>
     </div>
   </div>
 </template>
@@ -76,7 +85,7 @@ export default {
     async handleFileUpload() {
       this.files = Array.from(this.$refs.fileInput.files)
 
-      for(let i = 0; i < this.files.length; i++) {
+      for (let i = 0; i < this.files.length; i++) {
         // derive key from password
         const password = this.keyPass
         const salt = new Uint8Array([1, 2, 3, 4])
