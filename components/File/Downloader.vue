@@ -10,11 +10,10 @@
     >
     <div>
       <p>You can download the decrypted file over here</p>
-      <a
-        :href="decryptedFileURL"
-        download="decryptedFile.txt"
-      >Download</a>
-      <p>{{ decryptedFileURL }}</p>
+      <button
+        v-if="decryptedFileURL"
+        @click="downloadFile">Download
+      </button>
     </div>
   </div>
 </template>
@@ -26,6 +25,7 @@ export default {
   data() {
     return {
       decryptedFileURL: '',
+      originalFilename: '',
     }
   },
   computed: {
@@ -34,22 +34,43 @@ export default {
     },
   },
   methods: {
+    downloadFile() {
+      const a = document.createElement('a')
+      a.href = this.decryptedFileURL
+      a.download = this.originalFilename
+      document.body.appendChild(a)
+      a.click()
+    },
     async handleFileUpload() {
 
       // convert file to arraybuffer
       const file = this.$refs.fileInput.files[0]
       const encryptedData = await file.arrayBuffer()
 
-      // get key from pinia store
+      // get key and filename from pinia store
       const passStore = useObjectStore()
       const cryptoKeyObj = passStore.object
+      const encryptedFilename = passStore.filename
+
+      // extract filename iv from encrypted file
+      const filenameivBuffer = encryptedData.slice(0, 12)
+      const filenameiv = new Uint8Array(filenameivBuffer)
 
       // extract iv from encrypted file
-      const ivBuffer = encryptedData.slice(0, 12) // Extract IV from encrypted data
+      const ivBuffer = encryptedData.slice(12, 24)
       const iv = new Uint8Array(ivBuffer)
 
       // extract encrypted content from encrypted file
-      const ciphertext = encryptedData.slice(12)
+      const ciphertext = encryptedData.slice(24)
+      
+      // decrypt filename
+      try {
+        const decryptedFilename = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: filenameiv }, cryptoKeyObj, encryptedFilename)
+        const originalFilename = new TextDecoder().decode(decryptedFilename)
+        this.originalFilename = originalFilename
+      } catch (error) {
+        console.error('error during filename decryption: ', error)
+      }
 
       // decrypt file and create download URL
       try {
@@ -57,9 +78,8 @@ export default {
         const decryptedBlob = new Blob([decryptedData], { type: 'text/plain' })
         this.decryptedFileURL = URL.createObjectURL(decryptedBlob)
       } catch (error) {
-        console.error('error decryption ', error)
+        console.error('error during content decryption: ', error)
       }
-      
     },
   },
 }

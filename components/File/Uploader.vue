@@ -33,7 +33,6 @@ export default {
       decryptedFileURL: '',
       keyPass: '',
       newFilename: '',
-      oriFilename: '',
     }
   },
   computed: {
@@ -94,7 +93,9 @@ export default {
       const encryptedData = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKeyObj, fileAB)
 
       // get filename and iv for filename encryption
+      console.log('original filename = ', file.name )
       const encodedFilename = new TextEncoder().encode(file.name)
+      console.log('encoded filename = ', encodedFilename)
       const filenameiv = crypto.getRandomValues(new Uint8Array(12))
 
       // encrypt filename
@@ -105,13 +106,14 @@ export default {
       const newFilename = btoa(String.fromCharCode.apply(null, filenameArray)) + '.bin'
       this.newFilename = newFilename
 
-      // create blob for file download, concatenate iv into encrypted file
-      const encryptedBlob = new Blob([iv, encryptedData], { type: 'application/octet-stream' })
-      this.encryptedFileURL = URL.createObjectURL(encryptedBlob)
-
       // upload key to pinia store
       const testStore = useObjectStore()
       testStore.object = cryptoKeyObj
+      testStore.filename = encryptedFilename
+
+      // create blob for file download, concatenate filenameiv and iv into encrypted file
+      const encryptedBlob = new Blob([filenameiv, iv, encryptedData], { type: 'application/octet-stream' })
+      this.encryptedFileURL = URL.createObjectURL(encryptedBlob)
     },
     async encryptFilename(string, key) {
       const encoded = new TextEncoder().encode(string)
