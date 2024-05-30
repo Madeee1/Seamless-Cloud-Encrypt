@@ -67,20 +67,21 @@ export default {
         const cryptoKeyObj = vaultStore.key
 
         // extract index of orignal encrypted filename
-        const indexBuffer = encryptedData.slice(0, 1)
+        const separatorIndex = new Uint8Array(encryptedData).indexOf('\n'.charCodeAt(0))
+        const indexBuffer = encryptedData.slice(0, separatorIndex)
         const index = new TextDecoder().decode(indexBuffer)
         const encryptedFilename = vaultStore.filenameArray[index]
 
         // extract filename iv from encrypted file
-        const filenameivBuffer = encryptedData.slice(1, 13)
+        const filenameivBuffer = encryptedData.slice(separatorIndex + 1, separatorIndex + 13)
         const filenameiv = new Uint8Array(filenameivBuffer)
 
         // extract iv from encrypted file
-        const ivBuffer = encryptedData.slice(13, 25)
+        const ivBuffer = encryptedData.slice(separatorIndex + 13, separatorIndex + 25)
         const iv = new Uint8Array(ivBuffer)
 
         // extract encrypted content from encrypted file
-        const ciphertext = encryptedData.slice(25)
+        const ciphertext = encryptedData.slice(separatorIndex + 25)
 
         // decrypt filename
         try {

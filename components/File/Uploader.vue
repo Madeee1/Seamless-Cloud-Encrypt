@@ -119,8 +119,9 @@ export default {
         vaultStore.setKey(cryptoKeyObj)
         vaultStore.addFilename(encryptedFilename)
 
-        // create blob for file download, concatenate filenameiv and iv into encrypted file
-        const encryptedBlob = new Blob([i, filenameiv, iv, encryptedData], { type: 'application/octet-stream' })
+        // create blob for file download 
+        // concatenate index for pinia filenameArray, newline separator, filenameiv, and iv into encrypted file
+        const encryptedBlob = new Blob([i, '\n', filenameiv, iv, encryptedData], { type: 'application/octet-stream' })
         this.encryptedFileURL.push(URL.createObjectURL(encryptedBlob))
       }
     },
