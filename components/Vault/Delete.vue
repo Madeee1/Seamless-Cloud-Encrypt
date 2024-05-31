@@ -16,6 +16,6 @@ const supabase = useSupabaseClient()
 const vaultId = ref('')
 
 async function deleteVault(){
-    const { error } = await supabase.from('vaultstest').delete().eq('id', vaultId.value)
+    const { error } = await supabase.from('vault').delete().eq('id', vaultId.value)
 }
 </script>
