@@ -3,10 +3,7 @@
     <UCard class="w-[450px] mx-auto mt-8 rounded-2xl">
       <template #header>
         <!-- Use Tab to see whether user Signs up or Login -->
-        <UTabs
-          v-model="selectedTab"
-          :items="items"
-        />
+        <UTabs v-model="selectedTab" :items="items" />
       </template>
       <UForm
         :schema="schema"
@@ -14,22 +11,11 @@
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormGroup
-          label="Email"
-          name="email"
-          class="h-[80px]"
-        >
-          <UInput
-            v-model="state.email"
-            placeholder="example@example.com"
-          />
+        <UFormGroup label="Email" name="email" class="h-[80px]">
+          <UInput v-model="state.email" placeholder="example@example.com" />
         </UFormGroup>
 
-        <UFormGroup
-          label="Password"
-          name="password"
-          class="h-[80px]"
-        >
+        <UFormGroup label="Password" name="password" class="h-[80px]">
           <UInput
             v-model="state.password"
             type="password"
@@ -38,9 +24,7 @@
         </UFormGroup>
 
         <div class="flex">
-          <UButton type="submit">
-            Submit
-          </UButton>
+          <UButton type="submit"> Submit </UButton>
           <span class="text-red-500 ml-2 text-sm my-auto">
             {{ errorMessage }}
           </span>
@@ -74,8 +58,7 @@ type Schema = InferType<typeof schema>
 async function onSubmit(event: FormSubmitEvent<Schema>) {
   if (selectedTab.value === 1) {
     return await login()
-  }
-  else {
+  } else {
     return await signup()
   }
 }
@@ -87,8 +70,7 @@ async function login() {
       password: state.value.password,
     })
     navigateTo('/confirm')
-  }
-  catch (error: any) {
+  } catch (error: any) {
     errorMessage.value = error.message
   }
 }
@@ -103,8 +85,7 @@ async function signup() {
       },
     })
     navigateTo('/confirm')
-  }
-  catch (error: any) {
+  } catch (error: any) {
     errorMessage.value = error.message
   }
 }
@@ -116,7 +97,7 @@ const router = useRouter()
 
 const selectedTab = computed({
   get() {
-    const index = items.findIndex(item => item.label === route.query.tab)
+    const index = items.findIndex((item) => item.label === route.query.tab)
     if (index === -1) {
       return 0
     }

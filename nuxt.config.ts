@@ -1,13 +1,13 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
-  modules: ['@nuxt/ui', '@nuxt/eslint', '@nuxtjs/supabase', 'nuxt-security', '@nuxtjs/robots'],
-  eslint: {
-    checker: true,
-    config: {
-      stylistic: true,
-    },
-  },
+  modules: ['@nuxt/ui', '@nuxtjs/supabase', 'nuxt-security', '@nuxtjs/robots'],
+  // eslint: {
+  //   checker: true,
+  //   config: {
+  //     stylistic: true,
+  //   },
+  // },
   supabase: {
     redirect: true,
     redirectOptions: {
@@ -23,7 +23,8 @@ export default defineNuxtConfig({
   },
   security: {
     headers: {
-      crossOriginEmbedderPolicy: process.env.NODE_ENV === 'development' ? 'unsafe-none' : 'require-corp',
+      crossOriginEmbedderPolicy:
+        process.env.NODE_ENV === 'development' ? 'unsafe-none' : 'require-corp',
     },
     removeLoggers: process.env.NODE_ENV === 'development' ? false : undefined,
   },
@@ -39,4 +40,4 @@ export default defineNuxtConfig({
       },
     ],
   },
-})
+});
