@@ -1,9 +1,7 @@
 <template>
   <div class="flex justify-center items-center h-screen">
     <div class="bg-gray-200 p-4 rounded-lg">
-      <p class="text-lg font-semibold">
-        Waiting for email confirmation
-      </p>
+      <p class="text-lg font-semibold">Waiting for email confirmation</p>
     </div>
   </div>
 </template>
@@ -22,9 +20,9 @@ watch(
       // Clear cookie
       useCookie(`${cookieName}-redirect-path`).value = null
       // Redirect to path
-      return navigateTo(redirectPath || '/')
+      return navigateTo(redirectPath || '/dashboard')
     }
   },
-  { immediate: true },
+  { immediate: true }
 )
 </script>

@@ -1,23 +1,44 @@
 <template>
-  <div>
-    <form>
-      <p>Create Vault</p>
-      <label>Name</label>
-      <input type="text" required v-model="vaultName">
-      <br>
-      <label>Password</label>
-      <input type="password" required v-model="vaultPassword">
-      <br>
-      <label>Cloud</label>
-      <select v-model="vaultCloud">
-        <option value="None">None</option>
-        <option value="OneDrive">OneDrive</option>
-        <option value="GDrive">Google Drive</option>
-      </select>
-      <br>
+  <div class="p-4">
+    <form class="space-y-4">
+      <p class="text-lg font-semibold">Create Vault</p>
+      <div>
+        <label class="block">Name</label>
+        <input
+          v-model="vaultName"
+          type="text"
+          required
+          class="w-full border border-gray-300 rounded-md p-2"
+        />
+      </div>
+      <div>
+        <label class="block">Password</label>
+        <input
+          v-model="vaultPassword"
+          type="password"
+          required
+          class="w-full border border-gray-300 rounded-md p-2"
+        />
+      </div>
+      <div>
+        <label class="block">Cloud</label>
+        <select
+          v-model="vaultCloud"
+          class="w-full border border-gray-300 rounded-md p-2"
+        >
+          <option value="None">None</option>
+          <option value="OneDrive">OneDrive</option>
+          <option value="GDrive">Google Drive</option>
+        </select>
+      </div>
     </form>
-    <div>
-      <button @click="createVault()">Create Vault</button>
+    <div class="mt-4">
+      <button
+        class="px-4 py-2 bg-blue-500 text-white rounded-md"
+        @click="createVault()"
+      >
+        Create Vault
+      </button>
     </div>
   </div>
 </template>
@@ -25,7 +46,7 @@
 <script setup>
 import bcrypt from 'bcryptjs'
 const supabase = useSupabaseClient()
-const user = useSupabaseUser() 
+const user = useSupabaseUser()
 
 const vaultName = ref('')
 const vaultPassword = ref('')
@@ -33,13 +54,19 @@ const vaultCloud = ref('')
 
 const cloudFolder = ref('crypt_and_go_folder')
 
-async function createVault(){  
+async function createVault() {
   const vaultPass = JSON.stringify(vaultPassword)
   const saltRounds = 10
   const salt = await bcrypt.genSaltSync(saltRounds)
   const hashPass = await bcrypt.hashSync(vaultPass, salt)
-  const { data, error } = await supabase.from('vault')
-  .insert({'name': vaultName.value,'cloud_folder_name': cloudFolder.value,'cloud_provider': vaultCloud.value, 'hashed_password': hashPass})
-  .select()
+  const { data, error } = await supabase
+    .from('vault')
+    .insert({
+      name: vaultName.value,
+      cloud_folder_name: cloudFolder.value,
+      cloud_provider: vaultCloud.value,
+      hashed_password: hashPass,
+    })
+    .select()
 }
 </script>
