@@ -1,39 +1,41 @@
 <template>
-  <div class="flex flex-col items-center justify-center h-screen bg-white">
+  <div
+    class="flex flex-col items-center justify-center min-h-screen bg-gradient-to-t from-gray-900 to-blue-400 text-white"
+  >
     <div class="mb-8">
-      <img src="" alt="Crypt and Go Logo" class="h-12" />
+      <img src="" alt="Crypt and Go Logo" class="h-16" />
     </div>
-    <h1 class="text-4xl font-bold mb-4">
-      Safe and encrypted files in your cloud today
+    <h1 class="text-5xl font-extrabold mb-4 text-center">
+      Secure Your Files with Client-Side Encryption
     </h1>
-    <p class="text-gray-700 text-center mb-8 max-w-md">
-      No more trusting Google or Microsoft to keep your data safe. Seamlessly
-      encrypt your files locally and store them in your own Google Drive or
-      Microsoft OneDrive
+    <p class="text-lg text-center mb-8 max-w-lg">
+      Trust no one but yourself with your data. Encrypt your files locally
+      before uploading them to your preferred cloud service. Secure, seamless,
+      and simple.
     </p>
     <div class="flex space-x-4">
       <button
-        class="bg-lime-500 text-white px-4 py-2 rounded-md"
+        class="bg-lime-500 hover:bg-lime-600 text-white px-6 py-3 rounded-md font-semibold"
         @click="navigateTo('/login')"
       >
-        Login
+        Get Started
       </button>
       <button
-        class="bg-white text-gray-700 px-4 py-2 rounded-md border border-gray-300"
+        class="bg-white text-gray-700 hover:text-gray-900 px-6 py-3 rounded-md border border-gray-300 font-semibold"
         @click="navigateTo('/dashboard')"
       >
-        Open dashboard
+        Open Dashboard
       </button>
     </div>
-    <div class="flex items-center justify-center mt-8">
-      <span class="text-gray-500 mr-2">&#10003;</span>
-      <p class="text-gray-600">Free forever for core features</p>
-      <span class="text-gray-500 mx-2">&#10003;</span>
-      <p class="text-gray-600">More apps than any other platform</p>
+    <div class="flex items-center justify-center mt-12 space-x-8">
+      <div class="flex items-center space-x-2">
+        <span class="text-lime-400">&#10003;</span>
+        <p class="text-lg">Free forever for core features</p>
+      </div>
+      <div class="flex items-center space-x-2">
+        <span class="text-lime-400">&#10003;</span>
+        <p class="text-lg">More integrations than any other platform</p>
+      </div>
     </div>
   </div>
 </template>
-
-<script setup>
-
-</script>
