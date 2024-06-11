@@ -1,6 +1,10 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
+  routeRules: {
+    '/': { prerender: true },
+    '/dashboard/**': { prerender: false },
+  },
   modules: [
     '@nuxt/ui',
     '@nuxtjs/supabase',

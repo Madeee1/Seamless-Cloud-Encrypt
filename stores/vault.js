@@ -20,20 +20,6 @@ export const useVaultStore = defineStore('vault', {
     setKey(newKey) {
       this.key = newKey
     },
-    clearVaultInfo() {
-      this.key = null
-      this.id = null
-      this.name = ''
-      this.createdAt = ''
-      this.cloudFolderName = ''
-      this.cloudAccessToken = ''
-      this.cloudRefreshToken = ''
-      this.cloudProvider = ''
-      this.description = ''
-      this.idleTime = null
-      // TODO: DEPRECATE
-      this.filenameArray = []
-    },
     addFilename(newFilename) {
       this.filenameArray.push(newFilename)
     },
