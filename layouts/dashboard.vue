@@ -4,7 +4,7 @@
     <header
       class="bg-gray-800 text-white flex justify-between items-center p-4"
     >
-      <div class="flex items-center">
+      <div class="flex items-center" @click="navigateTo('/dashboard')">
         <div class="w-10 h-10 bg-gray-300 rounded-full mr-4"></div>
         <h1 class="text-xl">Vaults</h1>
       </div>
