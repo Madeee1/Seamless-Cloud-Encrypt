@@ -24,7 +24,6 @@
       >
         Open dashboard
       </button>
-      <LogOutButton />
     </div>
     <div class="flex items-center justify-center mt-8">
       <span class="text-gray-500 mr-2">&#10003;</span>
