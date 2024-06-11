@@ -2,30 +2,18 @@
   <div class="flex flex-col gap-4">
     <div>
       <p>Upload files you want to encrypt here</p>
-      <input
-        ref="fileInput"
-        type="file"
-        multiple
-        @change="handleFileUpload"
-      >
+      <input ref="fileInput" type="file" multiple @change="handleFileUpload" />
     </div>
     <div>
       <form>
         <label for="keyPass">Password: </label>
-        <input
-          v-model="keyPass"
-          type="text"
-        >
+        <input v-model="keyPass" type="text" />
       </form>
     </div>
-    <div
-      v-for="(file, index) in newFilename"
-      :key="index"
-    >
-      <a
-        :href="encryptedFileURL[index]"
-        :download="file"
-      >Download -> {{ file }}</a>
+    <div v-for="(file, index) in newFilename" :key="index">
+      <a :href="encryptedFileURL[index]" :download="file"
+        >Download -> {{ file }}</a
+      >
     </div>
   </div>
 </template>
@@ -65,7 +53,7 @@ export default {
         encodedPassword,
         { name: 'PBKDF2' },
         false,
-        ['deriveKey'],
+        ['deriveKey']
       )
       const key = await crypto.subtle.deriveKey(
         {
@@ -77,13 +65,14 @@ export default {
         derivedKey,
         { name: 'AES-GCM', length: 256 }, // 256-bit key for AES-GCM
         false,
-        ['encrypt', 'decrypt'],
+        ['encrypt', 'decrypt']
       )
 
       return key
     },
     async handleFileUpload() {
       this.files = Array.from(this.$refs.fileInput.files)
+      const vaultStore = useVaultStore()
 
       for (let i = 0; i < this.files.length; i++) {
         // derive key from password
@@ -99,14 +88,22 @@ export default {
         const iv = crypto.getRandomValues(new Uint8Array(12))
 
         // encrypt data
-        const encryptedData = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKeyObj, fileAB)
+        const encryptedData = await crypto.subtle.encrypt(
+          { name: 'AES-GCM', iv },
+          cryptoKeyObj,
+          fileAB
+        )
 
         // get filename and iv for filename encryption
         const encodedFilename = new TextEncoder().encode(file.name)
         const filenameiv = crypto.getRandomValues(new Uint8Array(12))
 
         // encrypt filename
-        const encryptedFilename = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: filenameiv }, cryptoKeyObj, encodedFilename)
+        const encryptedFilename = await crypto.subtle.encrypt(
+          { name: 'AES-GCM', iv: filenameiv },
+          cryptoKeyObj,
+          encodedFilename
+        )
 
         // convert encrypted filename to readable string
         const filenameArray = new Uint8Array(encryptedFilename)
@@ -115,13 +112,15 @@ export default {
         this.newFilename.push(newFilename)
 
         // upload key to pinia store
-        const vaultStore = useVaultStore()
         vaultStore.setKey(cryptoKeyObj)
         vaultStore.addFilename(encryptedFilename)
 
-        // create blob for file download 
+        // create blob for file download
         // concatenate index for pinia filenameArray, newline separator, filenameiv, and iv into encrypted file
-        const encryptedBlob = new Blob([i, '\n', filenameiv, iv, encryptedData], { type: 'application/octet-stream' })
+        const encryptedBlob = new Blob(
+          [i, '\n', filenameiv, iv, encryptedData],
+          { type: 'application/octet-stream' }
+        )
         this.encryptedFileURL.push(URL.createObjectURL(encryptedBlob))
       }
     },
