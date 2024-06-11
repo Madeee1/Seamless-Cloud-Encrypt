@@ -1,13 +1,13 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
-  modules: ['@nuxt/ui', '@nuxtjs/supabase', 'nuxt-security', '@nuxtjs/robots'],
-  // eslint: {
-  //   checker: true,
-  //   config: {
-  //     stylistic: true,
-  //   },
-  // },
+  modules: [
+    '@nuxt/ui',
+    '@nuxtjs/supabase',
+    'nuxt-security',
+    '@nuxtjs/robots',
+    '@pinia/nuxt',
+  ],
   supabase: {
     redirect: true,
     redirectOptions: {
@@ -40,4 +40,4 @@ export default defineNuxtConfig({
       },
     ],
   },
-});
+})
