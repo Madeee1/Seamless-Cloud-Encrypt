@@ -57,16 +57,19 @@ const cloudFolder = ref('crypt_and_go_folder')
 async function createVault() {
   const vaultPass = JSON.stringify(vaultPassword)
   const saltRounds = 10
-  const salt = await bcrypt.genSaltSync(saltRounds)
-  const hashPass = await bcrypt.hashSync(vaultPass, salt)
-  const { data, error } = await supabase
-    .from('vault')
-    .insert({
-      name: vaultName.value,
-      cloud_folder_name: cloudFolder.value,
-      cloud_provider: vaultCloud.value,
-      hashed_password: hashPass,
-    })
-    .select()
+  const hashPass = await bcrypt.hash(vaultPass, saltRounds)
+  const { error } = await supabase.from('vault').insert({
+    name: vaultName.value,
+    cloud_folder_name: cloudFolder.value,
+    cloud_provider: vaultCloud.value,
+    hashed_password: hashPass,
+  })
+
+  // TODO: Handle error
+  if (error) {
+    console.error(error)
+  } else {
+    navigateTo('/dashboard')
+  }
 }
 </script>

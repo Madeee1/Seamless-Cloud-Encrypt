@@ -23,7 +23,10 @@
 <script setup>
 const supabase = useSupabaseClient()
 const vaults = ref('')
+const vaultPinia = useVaultStore()
+
 async function readVault() {
+  // TODO: CHANGE TO Lazy ftech in order to have a pending state for a loading UI
   const { data: vault, error } = await supabase.from('vault').select()
 
   vaults.value = vault
