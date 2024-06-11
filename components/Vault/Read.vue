@@ -1,25 +1,23 @@
 <template>
   <div>
-    <div>
-      <h1 class="text-xl font-bold">Fetched Data</h1>
-      <dl v-for="vault in vaults" :key="vault.id" class="mt-4">
-        <div class="flex items-center">
-          <dd class="mr-4">Vault Name: {{ vault.name }}</dd>
-          <button
-            class="border border-black px-4 py-2"
-            @click="updateVault(vault.id)"
-          >
-            Update
-          </button>
-          <button
-            class="border border-black px-4 py-2"
-            @click="deleteVault(vault.id)"
-          >
-            Delete
-          </button>
-        </div>
-      </dl>
-    </div>
+    <h1 class="text-xl font-bold">Fetched Data</h1>
+    <dl v-for="vault in vaults" :key="vault.id" class="mt-4">
+      <div class="flex items-center">
+        <dd class="mr-4 w-15">{{ vault.name }}</dd>
+        <button
+          class="border border-black px-4 py-2 mr-2"
+          @click="updateVault(vault.id)"
+        >
+          Update
+        </button>
+        <button
+          class="border border-black px-4 py-2"
+          @click="deleteVault(vault.id)"
+        >
+          Delete
+        </button>
+      </div>
+    </dl>
   </div>
 </template>
 <script setup>
