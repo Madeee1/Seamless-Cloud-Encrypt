@@ -4,7 +4,7 @@
     <header
       class="bg-gray-800 text-white flex justify-between items-center p-4"
     >
-      <div class="flex items-center" @click="navigateTo('/dashboard')">
+      <div class="flex items-center">
         <div class="w-10 h-10 bg-gray-300 rounded-full mr-4"></div>
         <h1 class="text-xl">Vaults</h1>
       </div>
@@ -15,12 +15,13 @@
     <div class="flex flex-1">
       <!-- Sidebar -->
       <SideBar>
-        <VaultRead />
         <div class="flex-grow"></div>
         <UButton
           block
-          icon="i-heroicons-plus"
-          @click="navigateTo('/dashboard/create')"
+          color="red"
+          icon="i-heroicons-arrow-left"
+          label="Lock and Exit vault"
+          @click="lockAndExit"
         ></UButton>
       </SideBar>
 
@@ -32,6 +33,10 @@
   </body>
 </template>
 
-<script lang="ts" setup>
-
+<script setup>
+const vault = useVaultStore()
+function lockAndExit() {
+  vault.$reset()
+  navigateTo('/dashboard')
+}
 </script>

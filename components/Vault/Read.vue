@@ -4,7 +4,7 @@
     <dl v-for="vault in vaults" :key="vault.id" class="mt-4">
       <div
         class="flex items-center border border-black"
-        @click="openVault(vault.id)"
+        @click="openVault(vault.id, vault.name)"
       >
         <dd class="mr-4 w-15">{{ vault.name }}</dd>
         <button
@@ -50,8 +50,9 @@ async function deleteVault(id) {
   const { error } = await supabase.from('vault').delete().eq('id', id)
 }
 
-function openVault(id) {
+function openVault(id, name) {
   vaultPinia.id = id
+  vaultPinia.name = name
   navigateTo('/dashboard/open')
 }
 </script>
