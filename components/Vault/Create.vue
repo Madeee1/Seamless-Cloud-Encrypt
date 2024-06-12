@@ -65,7 +65,21 @@ async function createVault() {
   if (error) {
     console.error(error)
   } else {
+    readVault()
     navigateTo('/dashboard')
   }
+}
+
+const allVaults = useAllVaultStore()
+
+async function readVault() {
+  allVaults.pending = true
+  const { data: vault, error } = await supabase
+    .from('vault')
+    .select('id, name')
+    .eq('user_id', user.value.id)
+
+  allVaults.vaults = vault
+  allVaults.pending = false
 }
 </script>

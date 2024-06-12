@@ -18,13 +18,14 @@ const vaultPinia = useVaultStore()
 const allVaults = useAllVaultStore()
 
 async function readVault() {
-  // TODO: CHANGE TO Lazy ftech in order to have a pending state for a loading UI
+  allVaults.pending = true
   const { data: vault, error } = await supabase
     .from('vault')
     .select('id, name')
     .eq('user_id', user.value.id)
 
   allVaults.vaults = vault
+  allVaults.pending = false
 }
 
 onMounted(() => {
