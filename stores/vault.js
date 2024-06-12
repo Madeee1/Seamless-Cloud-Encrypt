@@ -12,6 +12,7 @@ export const useVaultStore = defineStore('vault', {
     cloudProvider: '',
     description: '',
     idleTime: null,
+    isOpen: false,
 
     // TODO: Deprecate later
     filenameArray: [],

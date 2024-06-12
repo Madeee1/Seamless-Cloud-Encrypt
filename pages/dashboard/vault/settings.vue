@@ -2,6 +2,7 @@
   <div>
     <h1>Settings</h1>
     <VaultUpdate />
+    <VaultDelete />
   </div>
 </template>
 
@@ -10,5 +11,6 @@ definePageMeta({
   title: 'Vault',
   description: 'Vault settings',
   layout: 'vault',
+  middleware: 'vault-auth',
 })
 </script>

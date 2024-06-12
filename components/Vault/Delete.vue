@@ -1,21 +1,29 @@
 <template>
-    <div>
-        <form>
-        <p>Delete Vault</p>
-        <label>id</label>
-        <input type="text" required v-model="vaultId">
-        <br>
-        </form>
-        <div>
-            <button @click="deleteVault()">Delete Vault</button>
-        </div>
-    </div>
-  </template>
+  <div>
+    <h1>Delete Vault</h1>
+    <UButton color="red" @click="deleteVault()"
+      >Click here if you are sure</UButton
+    >
+  </div>
+</template>
 <script setup>
 const supabase = useSupabaseClient()
-const vaultId = ref('')
+const user = useSupabaseUser()
 
-async function deleteVault(){
-    const { error } = await supabase.from('vault').delete().eq('id', vaultId.value)
+const vault = useVaultStore()
+
+async function deleteVault() {
+  const { error } = await supabase
+    .from('vault')
+    .delete()
+    .eq('id', vault.id)
+    .eq('user_id', user.value.id)
+
+  if (error) {
+    console.error(error)
+  } else {
+    vault.$reset()
+    navigateTo('/dashboard')
+  }
 }
 </script>

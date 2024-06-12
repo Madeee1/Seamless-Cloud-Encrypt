@@ -6,7 +6,6 @@
     >
       <div class="flex items-center">
         <div class="w-10 h-10 bg-gray-300 rounded-full mr-4"></div>
-        <h1 class="text-xl">Vaults</h1>
       </div>
       <LogOutButton />
     </header>

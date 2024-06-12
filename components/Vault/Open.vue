@@ -25,32 +25,38 @@ const password = ref('')
 const vault = useVaultStore()
 
 async function openVault() {
-  const response = await $fetch('/api/vault/auth', {
-    method: 'POST',
-    body: {
-      password: password.value,
-      vaultId: vault.id,
-    },
-  })
-
-  if (response.ok) {
-    // console.log(response)
-    // TODO: Handle success, and save to pinia
-    // TODO: Derive key from password
-    // TODO: Decrypt tokens
-    vault.$patch({
-      key: 'TODO',
-      name: response.data.name,
-      cloudProvider: response.data.cloud_provider,
-      cloudFolderName: response.data.cloud_folder_name,
-      createdAt: response.data.created_at,
-      description: response.data.description,
-      idleTime: response.data.idle_time,
-      cloudAccessToken: '',
-      cloudRefreshToken: '',
-      id: response.data.id,
+  try {
+    const response = await $fetch('/api/vault/auth', {
+      method: 'POST',
+      body: {
+        password: password.value,
+        vaultId: vault.id,
+      },
     })
-    navigateTo('/dashboard/vault')
+
+    if (response.ok) {
+      // console.log(response)
+      // TODO: Handle success, and save to pinia
+      // TODO: Derive key from password
+      // TODO: Decrypt tokens
+      vault.$patch({
+        key: 'TODO',
+        name: response.data.name,
+        cloudProvider: response.data.cloud_provider,
+        cloudFolderName: response.data.cloud_folder_name,
+        createdAt: response.data.created_at,
+        description: response.data.description,
+        idleTime: response.data.idle_time,
+        cloudAccessToken: '',
+        cloudRefreshToken: '',
+        id: response.data.id,
+        isOpen: true,
+      })
+      navigateTo('/dashboard/vault')
+    }
+  } catch (error) {
+    if (error.response.status === 401) alert('Wrong password, try again!')
+    if (error.response.status === 500) alert('Server error, try again later!')
   }
 }
 </script>
