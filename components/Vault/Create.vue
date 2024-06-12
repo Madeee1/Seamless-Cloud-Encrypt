@@ -33,12 +33,9 @@
       </div>
     </form>
     <div class="mt-4">
-      <button
-        class="px-4 py-2 bg-blue-500 text-white rounded-md"
-        @click="createVault()"
-      >
+      <UButton class="px-4 py-2 text-white rounded-md" @click="createVault()">
         Create Vault
-      </button>
+      </UButton>
     </div>
   </div>
 </template>
