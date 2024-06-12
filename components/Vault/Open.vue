@@ -34,7 +34,7 @@ async function openVault() {
   })
 
   if (response.ok) {
-    console.log(response)
+    // console.log(response)
     // TODO: Handle success, and save to pinia
     // TODO: Derive key from password
     // TODO: Decrypt tokens

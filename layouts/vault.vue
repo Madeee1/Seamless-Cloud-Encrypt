@@ -15,6 +15,7 @@
     <div class="flex flex-1">
       <!-- Sidebar -->
       <SideBar>
+        <UVerticalNavigation :links="links" />
         <div class="flex-grow"></div>
         <UButton
           block
@@ -39,4 +40,15 @@ function lockAndExit() {
   vault.$reset()
   navigateTo('/dashboard')
 }
+
+const links = [
+  [
+    { label: 'Vault', icon: 'i-heroicons-lock-closed', to: '/dashboard/vault' },
+    {
+      label: 'Settings',
+      icon: 'i-heroicons-cog-8-tooth',
+      to: '/dashboard/vault/settings',
+    },
+  ],
+]
 </script>

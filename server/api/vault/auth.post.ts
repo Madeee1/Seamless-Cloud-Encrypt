@@ -37,10 +37,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  console.log(password)
-  console.log(data.hashed_password)
   const match = await bcrypt.compare(password, data.hashed_password)
-  console.log(match)
 
   if (!match) {
     throw createError({
