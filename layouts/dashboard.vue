@@ -14,8 +14,14 @@
     <!-- Main Content -->
     <div class="flex flex-1">
       <!-- Sidebar -->
-      <aside class="bg-gray-100 w-64 p-4 h-full">
+      <aside class="bg-gray-100 w-64 p-4 h-full flex flex-col justify-between">
         <VaultRead />
+        <div class="flex-grow"></div>
+        <UButton
+          block
+          icon="i-heroicons-plus"
+          @click="navigateTo('/dashboard/create')"
+        ></UButton>
       </aside>
 
       <!-- Main Content Area -->
