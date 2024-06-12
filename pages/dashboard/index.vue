@@ -1,8 +1,5 @@
 <template>
-  <div>
-    <FileUploader />
-    <FileDownloader />
-  </div>
+  <div></div>
 </template>
 
 <script setup>

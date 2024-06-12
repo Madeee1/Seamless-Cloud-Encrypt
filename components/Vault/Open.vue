@@ -1,6 +1,6 @@
 <template>
   <div>
-    <!--Enter vault password-->
+    <h1>You are trying to open vault: {{ vault.name }}</h1>
     <input
       v-model="password"
       type="password"
@@ -50,7 +50,7 @@ async function openVault() {
       cloudRefreshToken: '',
       id: response.data.id,
     })
-    // NAVIGATE SOMEWHERE
+    navigateTo('/dashboard/vault')
   }
 }
 </script>
