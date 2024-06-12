@@ -5,6 +5,7 @@ export default defineNuxtConfig({
     '/': { prerender: true },
     '/dashboard/**': { prerender: false },
   },
+  css: ['@/assets/css/main.css'],
   modules: [
     '@nuxt/ui',
     '@nuxtjs/supabase',
