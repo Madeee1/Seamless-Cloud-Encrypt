@@ -20,12 +20,14 @@
 const supabase = useSupabaseClient()
 const vault = useVaultStore()
 const updatedVaultName = ref(vault.name)
+const user = useSupabaseUser()
 
 async function updateVault() {
   const { data, error } = await supabase
     .from('vault')
     .update({ name: updatedVaultName.value })
     .eq('id', vault.id)
+    .eq('user_id', user.value.id)
     .select()
 
   if (error) {

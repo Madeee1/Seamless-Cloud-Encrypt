@@ -22,7 +22,7 @@
       </button>
       <button
         class="bg-white text-gray-700 hover:text-gray-900 px-6 py-3 rounded-md border border-gray-300 font-semibold"
-        @click="navigateTo('/dashboard')"
+        @click="moveToDashboard"
       >
         Open Dashboard
       </button>
@@ -39,3 +39,15 @@
     </div>
   </div>
 </template>
+
+<script setup>
+const user = useSupabaseUser()
+
+function moveToDashboard() {
+  if (user.value) {
+    navigateTo('/dashboard')
+  } else {
+    navigateTo('/login')
+  }
+}
+</script>

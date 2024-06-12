@@ -1,7 +1,7 @@
 <template>
   <div class="flex justify-center items-center h-screen">
     <div class="bg-gray-200 p-4 rounded-lg">
-      <p class="text-lg font-semibold">Waiting for email confirmation</p>
+      <p class="text-lg font-semibold">Waiting for confirmation</p>
     </div>
   </div>
 </template>
