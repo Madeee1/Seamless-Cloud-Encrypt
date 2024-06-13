@@ -13,16 +13,10 @@ export const useVaultStore = defineStore('vault', {
     description: '',
     idleTime: Number | undefined,
     isOpen: false,
-
-    // TODO: Deprecate later
-    filenameArray: [],
   }),
   actions: {
     setKey(newKey) {
       this.key = newKey
-    },
-    addFilename(newFilename) {
-      this.filenameArray.push(newFilename)
     },
   },
 })

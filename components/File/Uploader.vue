@@ -30,23 +30,15 @@ export default {
     },
   },
   methods: {
-    downloadFile() {
-      for (let i = 0; i < this.encryptedFileURL.length; i++) {
-        const a = document.createElement('a')
-        a.href = this.encryptedFileURL
-        a.download = this.newFilename
-        document.body.appendChild(a)
-        a.click()
-      }
-    },
     async handleFileUpload() {
       this.files = Array.from(this.$refs.fileInput.files)
       const vaultStore = useVaultStore()
 
+      const encoder = new TextEncoder()
+
       for (let i = 0; i < this.files.length; i++) {
         // derive key from password
         const cryptoKeyObj = vaultStore.key
-        console.log(cryptoKeyObj)
 
         // convert file to arraybuffer
         const file = this.files[i]
@@ -63,7 +55,7 @@ export default {
         )
 
         // get filename and iv for filename encryption
-        const encodedFilename = new TextEncoder().encode(file.name)
+        const encodedFilename = encoder.encode(file.name)
         const filenameiv = crypto.getRandomValues(new Uint8Array(12))
 
         // encrypt filename
@@ -75,13 +67,10 @@ export default {
 
         // convert encrypted filename to readable string
         const filenameArray = new Uint8Array(encryptedFilename)
-        const filenameString = String.fromCharCode.apply(null, filenameArray)
-        const newFilename = btoa(filenameString) + '.bin'
+        // const filenameString = String.fromCharCode.apply(null, filenameArray)
+        const base64Filename = this.toBase64Url(filenameArray)
+        const newFilename = base64Filename + '.bin'
         this.newFilename.push(newFilename)
-
-        // upload key to pinia store
-        vaultStore.setKey(cryptoKeyObj)
-        vaultStore.addFilename(encryptedFilename)
 
         // create blob for file download
         // concatenate index for pinia filenameArray, newline separator, filenameiv, and iv into encrypted file
@@ -91,6 +80,25 @@ export default {
         )
         this.encryptedFileURL.push(URL.createObjectURL(encryptedBlob))
       }
+    },
+    toBase64Url(byteArray) {
+      // Convert byteArray to a standard base64 string
+      const base64String = window.btoa(
+        String.fromCharCode.apply(null, byteArray)
+      )
+
+      // Make the base64 string URL and filename safe
+      const base64UrlString = base64String
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '')
+
+      return base64UrlString
+    },
+    toHexString(byteArray) {
+      return Array.from(byteArray, function (byte) {
+        return ('0' + (byte & 0xff).toString(16)).slice(-2)
+      }).join('')
     },
   },
 }

@@ -55,9 +55,11 @@ export default {
         const separatorIndex = new Uint8Array(encryptedData).indexOf(
           '\n'.charCodeAt(0)
         )
-        const indexBuffer = encryptedData.slice(0, separatorIndex)
-        const index = new TextDecoder().decode(indexBuffer)
-        const encryptedFilename = vaultStore.filenameArray[index]
+
+        // Extract the filename, which is b64. Convert to ArrayBuffer for decryption
+        const encryptedFilenameB64 = this.files[i].name.replace(/\.bin$/, '')
+        const encFNameUInt8Array = this.fromBase64Url(encryptedFilenameB64)
+        const encryptedFilename = encFNameUInt8Array.buffer
 
         // extract filename iv from encrypted file
         const filenameivBuffer = encryptedData.slice(
@@ -104,6 +106,27 @@ export default {
           console.error('error during content decryption: ', error)
         }
       }
+    },
+    fromBase64Url(base64UrlString) {
+      // Replace URL-safe characters back to their original
+      const base64String = base64UrlString.replace(/-/g, '+').replace(/_/g, '/')
+
+      // Pad the base64 string to make its length a multiple of 4
+      const paddedBase64String = base64String.padEnd(
+        base64String.length + ((4 - (base64String.length % 4)) % 4),
+        '='
+      )
+
+      // Decode base64 string to a UTF-16 string
+      const decodedString = window.atob(paddedBase64String)
+
+      // Convert decoded string to byte array
+      const byteArray = new Uint8Array(decodedString.length)
+      for (let i = 0; i < decodedString.length; i++) {
+        byteArray[i] = decodedString.charCodeAt(i)
+      }
+
+      return byteArray
     },
   },
 }
