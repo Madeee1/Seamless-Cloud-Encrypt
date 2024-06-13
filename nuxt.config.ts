@@ -12,7 +12,7 @@ export default defineNuxtConfig({
     'nuxt-security',
     '@nuxtjs/robots',
     '@pinia/nuxt',
-    '@pinia-plugin-persistedstate/nuxt',
+    // '@pinia-plugin-persistedstate/nuxt',
   ],
   supabase: {
     redirect: true,
