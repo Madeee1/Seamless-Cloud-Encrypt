@@ -49,7 +49,6 @@ export default {
         const encryptedData = await file.arrayBuffer()
 
         // get key and filename from pinia store
-
         const cryptoKeyObj = vaultStore.key
 
         // extract index of orignal encrypted filename

@@ -1,16 +1,23 @@
 <template>
-  <div>
-    <h1>You are trying to open vault: {{ vault.name }}</h1>
-    <input
-      v-model="password"
-      type="password"
-      placeholder="Enter vault password"
-      class="border border-black px-4 py-2"
-    />
-    <!--Submit button-->
-    <button class="border border-black px-4 py-2" @click="openVault">
-      Submit
-    </button>
+  <div class="flex flex-col items-center justify-center h-full bg-gray-100 p-4">
+    <div class="w-full max-w-md p-8 space-y-4 bg-white rounded-lg shadow">
+      <h1 class="text-xl font-semibold text-gray-800">
+        You are trying to open vault: {{ vault.name }}
+      </h1>
+      <input
+        v-model="password"
+        type="password"
+        placeholder="Enter vault password"
+        class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
+      />
+      <!--Submit button-->
+      <UButton
+        class="w-full px-4 py-2 text-white focus:outline-none focus:ring-2"
+        @click="openVault"
+      >
+        Submit
+      </UButton>
+    </div>
   </div>
 </template>
 
@@ -35,12 +42,11 @@ async function openVault() {
     })
 
     if (response.ok) {
-      // console.log(response)
-      // TODO: Handle success, and save to pinia
-      // TODO: Derive key from password
+      const encryptionKeyObject = await deriveKeyFromPassword(password.value)
+
       // TODO: Decrypt tokens
       vault.$patch({
-        key: 'TODO',
+        key: encryptionKeyObject,
         name: response.data.name,
         cloudProvider: response.data.cloud_provider,
         cloudFolderName: response.data.cloud_folder_name,
@@ -55,8 +61,42 @@ async function openVault() {
       navigateTo('/dashboard/vault')
     }
   } catch (error) {
-    if (error.response.status === 401) alert('Wrong password, try again!')
-    if (error.response.status === 500) alert('Server error, try again later!')
+    if (!error.response) {
+      alert('Network error, try again later!')
+    } else if (error.response.status === 401) {
+      alert('Wrong password, try again!')
+    } else if (error.response.status === 500) {
+      alert('Server error, try again later!')
+    }
   }
+}
+
+async function deriveKeyFromPassword(password) {
+  const salt = new Uint8Array([1, 2, 3, 4])
+  const encoder = new TextEncoder()
+  const encodedPassword = encoder.encode(password)
+
+  // Import key here is used to set the "structure" of the key
+  const derivedKey = await crypto.subtle.importKey(
+    'raw',
+    encodedPassword,
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey']
+  )
+  const key = await crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 110000,
+      hash: 'SHA-256',
+    },
+    derivedKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  )
+
+  return key
 }
 </script>

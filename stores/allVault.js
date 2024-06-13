@@ -2,7 +2,7 @@
 import { defineStore } from 'pinia'
 
 export const useAllVaultStore = defineStore({
-  id: 'myAllVaultStore',
+  id: 'allVaults',
   state: () => ({
     loading: false,
     vaults: [],

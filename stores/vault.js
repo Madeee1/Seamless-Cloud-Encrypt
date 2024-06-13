@@ -2,8 +2,8 @@ import { defineStore } from 'pinia'
 
 export const useVaultStore = defineStore('vault', {
   state: () => ({
-    key: null,
-    id: null,
+    key: CryptoKey | undefined,
+    id: Number | undefined,
     name: '',
     createdAt: '',
     cloudFolderName: '',
@@ -11,7 +11,7 @@ export const useVaultStore = defineStore('vault', {
     cloudRefreshToken: '',
     cloudProvider: '',
     description: '',
-    idleTime: null,
+    idleTime: Number | undefined,
     isOpen: false,
 
     // TODO: Deprecate later
