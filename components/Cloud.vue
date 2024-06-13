@@ -70,14 +70,13 @@ export default {
 
     connectToOneDrive() {
       try {
-        //const clientID = process.env.OD_CLIENT_ID 
-        const clientID = '7dcaac58-fe03-412f-a027-44cd3c63383e'
+        const clientID = import.meta.env.VITE_CLIENT_ID
         const redirectUri = 'https://super-duper-palm-tree-g4x9qrw94p5r2vww-3000.app.github.dev/testing' // change later! to url of vault after successfully connected to cloud!
         const scope = 'files.readwrite offline_access' // perm. app req.; offline_access - allow app 2 receive refresh tokens 2 obtain new access tokens w/o user having to sign in again
         const responseType = 'code' // auth. code
         const tenantID = 'common' 
 
-// Generate PKCE code verifier & code challenge
+        // Generate PKCE code verifier & code challenge
         const codeVerifier = this.generateCodeVerifier();
         const codeChallenge = this.generateCodeChallenge(codeVerifier);
         sessionStorage.setItem('code_verifier', codeVerifier);
@@ -94,7 +93,7 @@ export default {
     // exchange auth. code for access token
     async getAccessToken(code) {
       try {
-        const clientID = '7dcaac58-fe03-412f-a027-44cd3c63383e'
+        const clientID = import.meta.env.VITE_CLIENT_ID 
         const redirectUri = 'https://super-duper-palm-tree-g4x9qrw94p5r2vww-3000.app.github.dev/testing' // change later! to url of vault after successfully connected to cloud!
         const tenantID = 'common'
         const tokenURL = `https://login.microsoftonline.com/${tenantID}/oauth2/v2.0/token` // where exchange takes place
@@ -140,7 +139,7 @@ export default {
 
     async refreshAccessToken() {
       try {
-        const clientID = '7dcaac58-fe03-412f-a027-44cd3c63383e'
+        const clientID = import.meta.env.VITE_CLIENT_ID 
         const redirectUri = 'https://super-duper-palm-tree-g4x9qrw94p5r2vww-3000.app.github.dev/testing' // change later! to url of vault after successfully connected to cloud!
         const tenantID = 'common'
         const tokenURL = `https://login.microsoftonline.com/${tenantID}/oauth2/v2.0/token`
