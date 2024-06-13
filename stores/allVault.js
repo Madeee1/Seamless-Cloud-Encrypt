@@ -8,4 +8,7 @@ export const useAllVaultStore = defineStore({
     vaults: [],
   }),
   actions: {},
+  persist: {
+    storage: persistedState.sessionStorage,
+  },
 })

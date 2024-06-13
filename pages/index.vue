@@ -47,7 +47,7 @@ function moveToDashboard() {
   if (user.value) {
     navigateTo('/dashboard')
   } else {
-    navigateTo('/login')
+    navigateTo('/login?tab=Login')
   }
 }
 </script>
