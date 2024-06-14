@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1 class="text-3xl font-bold text-gray-800">Update Vault:</h1>
+    <h1 class="text-3xl font-bold text-gray-800">Update Vault</h1>
     <form class="mt-6">
       <label for="vaultName" class="block text-gray-700 font-medium mb-2"
         >Name:</label

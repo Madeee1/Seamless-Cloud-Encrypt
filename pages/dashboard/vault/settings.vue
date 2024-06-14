@@ -1,7 +1,8 @@
 <template>
-  <div>
+  <div class="flex flex-col gap-8">
     <VaultUpdate />
     <VaultDelete />
+    <Cloud />
   </div>
 </template>
 

@@ -1,13 +1,24 @@
-// Authentication - Auth2.0
 <template>
-  <div>
-    <button @click="connectToOneDrive" class="border border-black">
+  <div class="space-y-4">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Connect to cloud</h1>
+    <UButton
+      class="text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+      @click="connectToOneDrive"
+    >
       Connect to OneDrive
-    </button>
-    <div v-if="connected">
+    </UButton>
+    <div
+      v-if="connected"
+      class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4"
+      role="alert"
+    >
       <p>Connected to OneDrive.</p>
     </div>
-    <div v-if="error">
+    <div
+      v-if="error"
+      class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4"
+      role="alert"
+    >
       <p>Error: {{ error }}</p>
     </div>
   </div>
@@ -51,8 +62,7 @@ export default {
       try {
         const codeVerifier = uuidv4() + uuidv4() + uuidv4() + uuidv4()
         return codeVerifier
-      }
-      catch (err) {
+      } catch (err) {
         this.error = `Error generating code verifier: ${err.message}`
       }
     },
@@ -61,9 +71,11 @@ export default {
       try {
         const hash = sha256(codeVerifier)
         const base64Hash = Base64.stringify(hash)
-        return base64Hash.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-      }
-      catch (err) {
+        return base64Hash
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_')
+          .replace(/=+$/, '')
+      } catch (err) {
         this.error = `Error generating code challenge: ${err.message}`
       }
     },
@@ -71,21 +83,21 @@ export default {
     connectToOneDrive() {
       try {
         const clientID = import.meta.env.VITE_CLIENT_ID
-        const redirectUri = 'https://super-duper-palm-tree-g4x9qrw94p5r2vww-3000.app.github.dev/testing' // change later! to url of vault after successfully connected to cloud!
+        const redirectUri =
+          'https://super-duper-palm-tree-g4x9qrw94p5r2vww-3000.app.github.dev/testing' // change later! to url of vault after successfully connected to cloud!
         const scope = 'files.readwrite offline_access' // perm. app req.; offline_access - allow app 2 receive refresh tokens 2 obtain new access tokens w/o user having to sign in again
         const responseType = 'code' // auth. code
-        const tenantID = 'common' 
+        const tenantID = 'common'
 
         // Generate PKCE code verifier & code challenge
-        const codeVerifier = this.generateCodeVerifier();
-        const codeChallenge = this.generateCodeChallenge(codeVerifier);
-        sessionStorage.setItem('code_verifier', codeVerifier);
-        
+        const codeVerifier = this.generateCodeVerifier()
+        const codeChallenge = this.generateCodeChallenge(codeVerifier)
+        sessionStorage.setItem('code_verifier', codeVerifier)
+
         const authURL = `https://login.microsoftonline.com/${tenantID}/oauth2/v2.0/authorize?response_type=code&client_id=${clientID}&redirect_uri=${redirectUri}&scope=${scope}&code_challenge=${codeChallenge}&code_challenge_method=S256&prompt=consent`
-        console.log('Redirecting to:', authURL); // debugging: Log the authorization URL
+        console.log('Redirecting to:', authURL) // debugging: Log the authorization URL
         window.location.href = authURL // 2 redirect user 2 auth. url ;prop. of window.locn obj that get/sets url of current page
-      }
-      catch (err) {
+      } catch (err) {
         this.error = 'Error connecting to OneDrive: ${err.message}'
       }
     },
@@ -93,8 +105,9 @@ export default {
     // exchange auth. code for access token
     async getAccessToken(code) {
       try {
-        const clientID = import.meta.env.VITE_CLIENT_ID 
-        const redirectUri = 'https://super-duper-palm-tree-g4x9qrw94p5r2vww-3000.app.github.dev/testing' // change later! to url of vault after successfully connected to cloud!
+        const clientID = import.meta.env.VITE_CLIENT_ID
+        const redirectUri =
+          'https://super-duper-palm-tree-g4x9qrw94p5r2vww-3000.app.github.dev/testing' // change later! to url of vault after successfully connected to cloud!
         const tenantID = 'common'
         const tokenURL = `https://login.microsoftonline.com/${tenantID}/oauth2/v2.0/token` // where exchange takes place
         const codeVerifier = sessionStorage.getItem('code_verifier')
@@ -111,7 +124,8 @@ export default {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded', // Set CT header to that, indic8 req. body is url encoded
           },
-          body: new URLSearchParams({ // construct req. body as URL encoded param.
+          body: new URLSearchParams({
+            // construct req. body as URL encoded param.
             client_id: clientID,
             code: code,
             grant_type: 'authorization_code',
@@ -122,16 +136,17 @@ export default {
 
         if (!response.ok) {
           const errorText = await response.text()
-          throw new Error(`Failed to obtain access token: ${response.statusText} - ${errorText}`)
+          throw new Error(
+            `Failed to obtain access token: ${response.statusText} - ${errorText}`
+          )
         }
 
         const tokenData = await response.json() // parse response as json
         this.accessToken = tokenData.access_token // store access token
         this.refreshToken = tokenData.refresh_token // store refresh token
         this.connected = true
-        window.history.replaceState({}, document.title, "/") // clean URL
-      }
-      catch (err) {
+        window.history.replaceState({}, document.title, '/') // clean URL
+      } catch (err) {
         this.error = `Error obtaining access token: ${err.message}`
         console.error('Error details:', err) // Log detailed error information
       }
@@ -139,8 +154,9 @@ export default {
 
     async refreshAccessToken() {
       try {
-        const clientID = import.meta.env.VITE_CLIENT_ID 
-        const redirectUri = 'https://super-duper-palm-tree-g4x9qrw94p5r2vww-3000.app.github.dev/testing' // change later! to url of vault after successfully connected to cloud!
+        const clientID = import.meta.env.VITE_CLIENT_ID
+        const redirectUri =
+          'https://super-duper-palm-tree-g4x9qrw94p5r2vww-3000.app.github.dev/testing' // change later! to url of vault after successfully connected to cloud!
         const tenantID = 'common'
         const tokenURL = `https://login.microsoftonline.com/${tenantID}/oauth2/v2.0/token`
 
@@ -158,16 +174,17 @@ export default {
         })
 
         if (!response.ok) {
-          throw new Error('Failed to refresh access token: ${response.statusText}')
+          throw new Error(
+            'Failed to refresh access token: ${response.statusText}'
+          )
         }
 
         const tokenData = await response.json()
         this.accessToken = tokenData.access_token
         this.refreshToken = tokenData.refresh_token // refresh token if new one is provided
         this.connected = true
-        window.history.replaceState({}, document.title, "/") // clean URL
-      }
-      catch (err) {
+        window.history.replaceState({}, document.title, '/') // clean URL
+      } catch (err) {
         this.error = `Error refreshing access token: ${err.message}`
         console.error('Error details:', err)
       }
