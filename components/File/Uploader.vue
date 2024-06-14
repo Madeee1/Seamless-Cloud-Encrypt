@@ -1,11 +1,20 @@
 <template>
   <div class="flex flex-col gap-4">
     <div>
-      <p>Upload files you want to encrypt here</p>
-      <input ref="fileInput" type="file" multiple @change="handleFileUpload" />
+      <p class="text-lg font-semibold">Upload files you want to encrypt here</p>
+      <input
+        ref="fileInput"
+        type="file"
+        multiple
+        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+        @change="handleFileUpload"
+      />
     </div>
-    <div v-for="(file, index) in newFilename" :key="index">
-      <a :href="encryptedFileURL[index]" :download="file"
+    <div v-for="(file, index) in newFilename" :key="index" class="pt-2">
+      <a
+        :href="encryptedFileURL[index]"
+        :download="file"
+        class="text-blue-500 hover:text-blue-800"
         >Download -> {{ file }}</a
       >
     </div>

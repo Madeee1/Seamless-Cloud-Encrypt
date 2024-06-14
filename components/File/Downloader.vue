@@ -1,15 +1,21 @@
 <template>
-  <div>
-    <br />
-    <br />
-    <p>Upload files you want to DECRYPT here</p>
-    <input ref="fileInput" type="file" multiple @change="handleFileUpload" />
+  <div class="space-y-4">
+    <p class="pt-4">Upload files you want to DECRYPT here</p>
+    <input
+      ref="fileInput"
+      type="file"
+      multiple
+      class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
+      @change="handleFileUpload"
+    />
     <div>
       <p>You can download the decrypted file over here</p>
-      <button v-if="decryptedFileURL" @click="downloadFile">Download</button>
     </div>
-    <div v-for="(file, index) in originalFilename" :key="index">
-      <a :href="decryptedFileURL[index]" :download="file"
+    <div v-for="(file, index) in originalFilename" :key="index" class="pt-2">
+      <a
+        :href="decryptedFileURL[index]"
+        :download="file"
+        class="text-blue-500 hover:text-blue-800"
         >Download -> {{ file }}</a
       >
     </div>

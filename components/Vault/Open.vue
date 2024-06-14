@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col items-center justify-center h-full bg-gray-100 p-4">
+  <div class="flex flex-col items-center justify-center h-full p-4">
     <div class="w-full max-w-md p-8 space-y-4 bg-white rounded-lg shadow">
       <h1 class="text-xl font-semibold text-gray-800">
         You are trying to open vault: {{ vault.name }}
