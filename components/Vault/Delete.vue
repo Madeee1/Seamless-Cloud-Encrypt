@@ -28,24 +28,9 @@ const vault = useVaultStore()
 const confirmPassword = ref(false)
 const password = ref('')
 
-async function deleteVault() {
-  const { error } = await supabase
-    .from('vault')
-    .delete()
-    .eq('id', vault.id)
-    .eq('user_id', user.value.id)
-
-  if (error) {
-    console.error(error)
-  } else {
-    vault.$reset()
-    navigateTo('/dashboard')
-  }
-}
-
 async function confirmDelete() {
   try {
-    const response = await $fetch('/api/vault/auth', {
+    const response = await $fetch('/api/vault/delete/auth', {
       method: 'POST',
       body: {
         password: password.value,
@@ -54,7 +39,8 @@ async function confirmDelete() {
     })
 
     if (response.ok) {
-      deleteVault()
+      vault.$reset()
+      navigateTo('/dashboard')
     }
   } catch (error) {
     if (!error.response) {
