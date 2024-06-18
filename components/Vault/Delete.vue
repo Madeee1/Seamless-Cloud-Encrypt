@@ -1,9 +1,20 @@
 <template>
   <div>
     <h1>Delete Vault</h1>
-    <UButton color="red" @click="deleteVault()"
+    <UButton color="red" @click="confirmPassword = true"
       >Click here if you are sure</UButton
     >
+    <div v-if="confirmPassword">
+      <label for="confirm-password">Confirm Password:</label>
+      <input
+        id="confirm-password"
+        v-model="password"
+        type="password"
+        placeholder="Enter vault password"
+        class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
+      />
+      <UButton class="mx-4 mt-4" @click="confirmDelete">Confirm</UButton>
+    </div>
   </div>
 </template>
 <script setup>
@@ -11,6 +22,9 @@ const supabase = useSupabaseClient()
 const user = useSupabaseUser()
 
 const vault = useVaultStore()
+
+const confirmPassword = ref(false)
+const password = ref('')
 
 async function deleteVault() {
   const { error } = await supabase
@@ -24,6 +38,30 @@ async function deleteVault() {
   } else {
     vault.$reset()
     navigateTo('/dashboard')
+  }
+}
+
+async function confirmDelete() {
+  try {
+    const response = await $fetch('/api/vault/auth', {
+      method: 'POST',
+      body: {
+        password: password.value,
+        vaultId: vault.id,
+      },
+    })
+
+    if (response.ok) {
+      deleteVault()
+    }
+  } catch (error) {
+    if (!error.response) {
+      alert('Network error, try again later!')
+    } else if (error.response.status === 401) {
+      alert('Wrong password, try again!')
+    } else if (error.response.status === 500) {
+      alert('Server error, try again later!')
+    }
   }
 }
 </script>
