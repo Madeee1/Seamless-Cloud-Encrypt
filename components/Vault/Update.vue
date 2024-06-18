@@ -1,23 +1,29 @@
 <template>
   <div>
-    <h1 class="text-3xl font-bold text-gray-800">Update Vault</h1>
-    <form class="mt-6">
-      <label for="vaultName" class="block text-gray-700 font-medium mb-2"
-        >Name:</label
-      >
-      <input
-        id="vaultName"
-        v-model="updatedVaultName"
-        type="text"
-        required
-        class="form-input mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50"
-      />
-      <UButton
-        class="mt-4 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2"
-        @click="updateVault()"
-        >Update Vault</UButton
-      >
-    </form>
+    <h1 class="text-2xl font-bold">Update Vault:</h1>
+    <div>
+      <form>
+        <div>
+          <label class="block mt-4">Name:</label>
+          <input
+            v-model="updatedVaultName"
+            type="text"
+            required
+            class="border border-black p-2"
+          />
+        </div>
+        <div>
+          <label class="block mt-4">Description:</label>
+          <input
+            v-model="updatedVaultDescription"
+            type="text"
+            required
+            class="border border-black p-2"
+          />
+        </div>
+        <UButton class="mx-4 mt-4" @click="updateVault()">Update Vault</UButton>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -25,12 +31,16 @@
 const supabase = useSupabaseClient()
 const vault = useVaultStore()
 const updatedVaultName = ref(vault.name)
+const updatedVaultDescription = ref(vault.description)
 const user = useSupabaseUser()
 
 async function updateVault() {
   const { data, error } = await supabase
     .from('vault')
-    .update({ name: updatedVaultName.value })
+    .update({
+      name: updatedVaultName.value,
+      description: updatedVaultDescription.value,
+    })
     .eq('id', vault.id)
     .eq('user_id', user.value.id)
     .select()

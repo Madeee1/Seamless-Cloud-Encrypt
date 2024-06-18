@@ -4,6 +4,11 @@
       <h1 class="text-xl font-semibold text-gray-800">
         You are trying to open vault: {{ vault.name }}
       </h1>
+      <h2 class="text font-semibold text-gray-800">
+        Vault Description: <br />
+        <br />
+        {{ vault.description }}
+      </h2>
       <input
         v-model="password"
         type="password"

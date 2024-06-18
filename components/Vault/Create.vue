@@ -31,6 +31,15 @@
           <option value="GDrive">Google Drive</option>
         </select>
       </div>
+      <div>
+        <label class="block">Description</label>
+        <input
+          v-model="vaultDescription"
+          type="text"
+          required
+          class="w-full border border-gray-300 rounded-md p-2"
+        />
+      </div>
     </form>
     <div class="mt-4">
       <UButton class="px-4 py-2 text-white rounded-md" @click="createVault()">
@@ -48,6 +57,7 @@ const user = useSupabaseUser()
 const vaultName = ref('')
 const vaultPassword = ref('')
 const vaultCloud = ref('')
+const vaultDescription = ref('')
 
 const cloudFolder = ref('crypt_and_go_folder')
 
@@ -59,6 +69,7 @@ async function createVault() {
     cloud_folder_name: cloudFolder.value,
     cloud_provider: vaultCloud.value,
     hashed_password: hashPass,
+    description: vaultDescription.value,
   })
 
   // TODO: Handle error
@@ -76,7 +87,7 @@ async function readVault() {
   allVaults.pending = true
   const { data: vault, error } = await supabase
     .from('vault')
-    .select('id, name')
+    .select('id, name, description')
     .eq('user_id', user.value.id)
 
   allVaults.vaults = vault
