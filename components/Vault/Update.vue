@@ -14,11 +14,9 @@
         </div>
         <div>
           <label class="block mt-4">Description:</label>
-          <input
+          <textarea
             v-model="updatedVaultDescription"
-            type="text"
-            required
-            class="border border-black p-2"
+            class="border border-black p-2 w-[600px] h-[200px]"
           />
         </div>
         <UButton class="mx-4 mt-4" @click="updateVault()">Update Vault</UButton>
