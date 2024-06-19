@@ -64,14 +64,17 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 }
 
 async function login() {
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: state.value.email,
-      password: state.value.password,
-    })
-    navigateTo('/confirm')
-  } catch (error: any) {
+  // TODO: Error is not handled correctly
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: state.value.email,
+    password: state.value.password,
+  })
+
+  if (error) {
     errorMessage.value = error.message
+    return
+  } else {
+    navigateTo('/confirm')
   }
 }
 
