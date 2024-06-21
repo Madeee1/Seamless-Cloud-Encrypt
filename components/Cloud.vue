@@ -13,6 +13,13 @@
       role="alert"
     >
       <p>Connected to OneDrive.</p>
+      <div>
+        <button @click="showUpload">Upload File</button>
+        <button @click="showDownload">Download File</button>
+        <!--
+        <CloudUpload v-if="showUploadC" />
+        <CloudDownload v-if="showDownloadC" />  
+      --></div>
     </div>
     <div
       v-if="error"
@@ -26,47 +33,34 @@
 
 <script>
 import { v4 as uuidv4 } from 'uuid'
+// TODO: Deprecate use of crypto-js in favor of built-in Web Crypto API and btoa()
 import sha256 from 'crypto-js/sha256'
 import Base64 from 'crypto-js/enc-base64'
 
-// export Vue.js component
 export default {
   // data function ret. obj containing component's reactive data properties; init. aT to null
   data() {
     return {
       accessToken: null,
       refreshToken: null,
+      tokenExpiryTime: null,
       error: null,
       connected: false,
+      showUploadC: false,
+      showDownloadC: false,
     }
   },
-  mounted() {
-    try {
-      const URLparams = new URLSearchParams(window.location.search)
-      const code = URLparams.get('code') // get auth code from URL
-      if (code) {
-        this.getAccessToken(code) // exchange for access token if code exists
-      } else {
-        const error = URLparams.get('error')
-        if (error) {
-          this.error = 'Error from authorization server: ${error}'
-        }
-      }
-    } catch (err) {
-      this.error = 'Error during mounted: ${err.message}'
-    }
-  },
-
+  mounted() {},
   methods: {
     generateCodeVerifier() {
       try {
         const codeVerifier = uuidv4() + uuidv4() + uuidv4() + uuidv4()
+        sessionStorage.setItem('code_verifier', codeVerifier) // store code ver. in session storage
         return codeVerifier
       } catch (err) {
         this.error = `Error generating code verifier: ${err.message}`
       }
     },
-
     generateCodeChallenge(codeVerifier) {
       try {
         const hash = sha256(codeVerifier)
@@ -79,35 +73,30 @@ export default {
         this.error = `Error generating code challenge: ${err.message}`
       }
     },
-
     connectToOneDrive() {
+      console.log('button is being pressed')
       try {
         const clientID = import.meta.env.VITE_CLIENT_ID
-        const redirectUri =
-          'https://super-duper-palm-tree-g4x9qrw94p5r2vww-3000.app.github.dev/testing' // change later! to url of vault after successfully connected to cloud!
+        const redirectUri = import.meta.env.VITE_OD_REDIRECT_URI
         const scope = 'files.readwrite offline_access' // perm. app req.; offline_access - allow app 2 receive refresh tokens 2 obtain new access tokens w/o user having to sign in again
-        const responseType = 'code' // auth. code
         const tenantID = 'common'
 
         // Generate PKCE code verifier & code challenge
         const codeVerifier = this.generateCodeVerifier()
         const codeChallenge = this.generateCodeChallenge(codeVerifier)
-        sessionStorage.setItem('code_verifier', codeVerifier)
 
         const authURL = `https://login.microsoftonline.com/${tenantID}/oauth2/v2.0/authorize?response_type=code&client_id=${clientID}&redirect_uri=${redirectUri}&scope=${scope}&code_challenge=${codeChallenge}&code_challenge_method=S256&prompt=consent`
         console.log('Redirecting to:', authURL) // debugging: Log the authorization URL
         window.location.href = authURL // 2 redirect user 2 auth. url ;prop. of window.locn obj that get/sets url of current page
       } catch (err) {
-        this.error = 'Error connecting to OneDrive: ${err.message}'
+        this.error = `Error connecting to OneDrive: ${err.message}`
       }
     },
-
     // exchange auth. code for access token
     async getAccessToken(code) {
       try {
         const clientID = import.meta.env.VITE_CLIENT_ID
-        const redirectUri =
-          'https://super-duper-palm-tree-g4x9qrw94p5r2vww-3000.app.github.dev/testing' // change later! to url of vault after successfully connected to cloud!
+        const redirectUri = import.meta.env.VITE_OD_REDIRECT_URI
         const tenantID = 'common'
         const tokenURL = `https://login.microsoftonline.com/${tenantID}/oauth2/v2.0/token` // where exchange takes place
         const codeVerifier = sessionStorage.getItem('code_verifier')
@@ -144,14 +133,22 @@ export default {
         const tokenData = await response.json() // parse response as json
         this.accessToken = tokenData.access_token // store access token
         this.refreshToken = tokenData.refresh_token // store refresh token
+        this.tokenExpiryTime = Date.now() + tokenData.expires_in * 1000 // Calculate token expiration time
+
+        sessionStorage.setItem('access_token', this.accessToken)
+        sessionStorage.setItem('refresh_token', this.refreshToken)
+        sessionStorage.setItem('token_expiry_time', this.tokenExpiryTime)
+
+        console.log('Access Token:', this.accessToken) // debugging - log access token
         this.connected = true
         window.history.replaceState({}, document.title, '/') // clean URL
+
+        this.setTokenRefreshInterval()
       } catch (err) {
         this.error = `Error obtaining access token: ${err.message}`
         console.error('Error details:', err) // Log detailed error information
       }
     },
-
     async refreshAccessToken() {
       try {
         const clientID = import.meta.env.VITE_CLIENT_ID
@@ -174,20 +171,45 @@ export default {
         })
 
         if (!response.ok) {
+          const errorText = await response.text()
           throw new Error(
-            'Failed to refresh access token: ${response.statusText}'
+            `Failed to refresh access token: ${response.statusText} - ${errorText}`
           )
         }
 
         const tokenData = await response.json()
         this.accessToken = tokenData.access_token
         this.refreshToken = tokenData.refresh_token // refresh token if new one is provided
+        this.tokenExpiryTime = Date.now() + tokenData.expires_in * 1000
+
+        sessionStorage.setItem('access_token', this.accessToken)
+        sessionStorage.setItem('refresh_token', this.refreshToken)
+        sessionStorage.setItem('token_expiry_time', this.tokenExpiryTime)
+
+        console.log('Access Token:', this.accessToken)
         this.connected = true
         window.history.replaceState({}, document.title, '/') // clean URL
       } catch (err) {
         this.error = `Error refreshing access token: ${err.message}`
         console.error('Error details:', err)
       }
+    },
+    setTokenRefreshInterval() {
+      setInterval(() => {
+        const timeLeft = this.tokenExpiryTime - Date.now()
+        if (timeLeft < 5 * 60 * 1000) {
+          // < 5 min refresh
+          this.refreshAccessToken()
+        }
+      }, 60 * 1000) // Check every min if token going 2 expire
+    },
+    showUpload() {
+      this.showUploadC = true
+      this.showDownloadC = false
+    },
+    showDownload() {
+      this.showUploadC = false
+      this.showDownloadC = true
     },
   },
 }

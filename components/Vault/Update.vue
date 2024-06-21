@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-lg mx-auto my-8">
+  <div class="max-w-lg mx-auto my-2 w-[800px]">
     <h1 class="text-2xl font-bold text-center mb-6">Update Vault:</h1>
     <form>
       <div class="mb-4">
@@ -18,7 +18,7 @@
         <textarea
           v-model="updatedVaultDescription"
           required
-          class="w-[600px] shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          class="w-[600px] shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           rows="5"
         ></textarea>
       </div>
