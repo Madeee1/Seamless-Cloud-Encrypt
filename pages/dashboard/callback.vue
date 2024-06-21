@@ -46,6 +46,8 @@ onMounted(() => {
         error.value = `Error from authorization server: ${error}`
       }
     }
+
+    navigateTo('/dashboard')
   } catch (err) {
     error.value = `Error during mounted: ${err.message}`
   }
