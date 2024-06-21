@@ -15,7 +15,9 @@
     "@nuxt/ui": "^2.16.0",
     "@nuxtjs/supabase": "1.2.1",
     "@supabase/gotrue-js": "2.62.2",
+    "crypto-js": "^4.2.0",
     "nuxt": "^3.11.2",
+    "uuid": "^10.0.0",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0",
     "yup": "^1.4.0"

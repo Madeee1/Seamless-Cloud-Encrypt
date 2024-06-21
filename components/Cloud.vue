@@ -3,7 +3,7 @@
   <div>
     <button
       class="border border-black"
-      @click="connectToOneDrive"
+      @click="connectToOneDriveTest"
     >
       Connect to OneDrive
     </button>
@@ -16,8 +16,10 @@
       <button @click="showDownload">
         Download File
       </button>
-      <UploadC v-if="showUploadC" />
-      <DownloadC v-if="showDownloadC" />
+      <!--
+        <CloudUpload v-if="showUploadC" />
+        <CloudDownload v-if="showDownloadC" />  
+      -->
     </div>
     <div v-if="error">
       <p>Error: {{ error }}</p>
@@ -27,18 +29,17 @@
 
 <script>
 import { v4 as uuidv4 } from 'uuid'
+// TODO: Deprecate use of crypto-js in favor of built-in Web Crypto API and btoa()
 import sha256 from 'crypto-js/sha256'
 import Base64 from 'crypto-js/enc-base64'
-import UploadC from './UploadC.vue'
-import DownloadC from './DownloadC.vue'
 
 // export Vue.js component
 export default {
   // data function ret. obj containing component's reactive data properties; init. aT to null
-  components: {
-    UploadC,
-    DownloadC,
-  },
+  // components: {
+  //   CloudUpload,
+  //   CloudDownload,
+  // },
   data() {
     return {
       accessToken: null,
@@ -91,11 +92,15 @@ export default {
         this.error = `Error generating code challenge: ${err.message}`
       }
     },
+    connectToOneDriveTest() {
+      console.log("button is being pressed")
+    },
 
     connectToOneDrive() {
+      console.log("button is being pressed")
       try {
         const clientID = import.meta.env.VITE_CLIENT_ID
-        const redirectUri = 'https://super-duper-palm-tree-g4x9qrw94p5r2vww-3000.app.github.dev/testing' // change later! to url of vault after successfully connected to cloud!
+        const redirectUri = 'https://curly-space-waffle-gj9wv44v9xvc947-3000.app.github.dev/testing' // change later! to url of vault after successfully connected to cloud!
         const scope = 'files.readwrite offline_access' // perm. app req.; offline_access - allow app 2 receive refresh tokens 2 obtain new access tokens w/o user having to sign in again
         const tenantID = 'common'
 
@@ -116,7 +121,7 @@ export default {
     async getAccessToken(code) {
       try {
         const clientID = import.meta.env.VITE_CLIENT_ID
-        const redirectUri = 'https://super-duper-palm-tree-g4x9qrw94p5r2vww-3000.app.github.dev/testing' // change later! to url of vault after successfully connected to cloud!
+        const redirectUri = 'https://curly-space-waffle-gj9wv44v9xvc947-3000.app.github.dev/testing' // change later! to url of vault after successfully connected to cloud!
         const tenantID = 'common'
         const tokenURL = `https://login.microsoftonline.com/${tenantID}/oauth2/v2.0/token` // where exchange takes place
         const codeVerifier = sessionStorage.getItem('code_verifier')

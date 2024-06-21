@@ -6,25 +6,23 @@
     <button @click="filesList">
       Files List
     </button>
-    <ul class="file-list">
+    <ul class="">
       <li
         v-for="file in files"
         :key="file.id"
-        class="file-item"
+        class=""
       >
-        <div class="file-info">
+        <div class="">
           <img
             v-if="file.thumbnailUrl"
             :src="file.thumbnailUrl"
             alt="Thumbnail"
-            class="thumbnail"
           />
           <span>
             {{ file.name }}
           </span>
         </div>
         <button
-          class="download-button"
           @click="downloadFile(file.id)"
         >
           Download

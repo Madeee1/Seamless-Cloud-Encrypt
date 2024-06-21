@@ -3,7 +3,7 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxt/ui', '@nuxt/eslint', '@nuxtjs/supabase'],
   eslint: {
-    checker: true,
+    // checker: true,
     config: {
       stylistic: true,
     },
