@@ -1,52 +1,46 @@
 <template>
-  <div>
-    <h1>Download:</h1>
-    <button @click="filesList">Refresh Files List</button>
-    <ul class="">
-      <li v-for="file in files" :key="file.id" class="">
-        <div class="">
+  <div class="max-w-md p-4">
+    <h1 class="text-2xl font-bold mb-4">Download:</h1>
+    <button
+      class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
+      @click="filesList"
+    >
+      Refresh Files List
+    </button>
+    <ul>
+      <li
+        v-for="file in files"
+        :key="file.id"
+        class="flex items-center justify-between bg-gray-100 p-2 rounded mb-2 gap-2"
+      >
+        <div class="flex items-center">
           <img
             v-if="file.thumbnailUrl"
             :src="file.thumbnailUrl"
             alt="Thumbnail"
+            class="w-10 h-10 mr-4 rounded"
           />
-          <span>
+          <span class="font-medium">
             {{ file.name }}
           </span>
         </div>
-        <button @click="downloadFile(file.id)">Download</button>
+        <UButton
+          class="text-white font-bold py-1 px-3 rounded"
+          @click="downloadFile(file.id)"
+        >
+          Download
+        </UButton>
       </li>
     </ul>
-    <div v-if="error">
+    <div
+      v-if="error"
+      class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+      role="alert"
+    >
       <p>Error: {{ error }}</p>
     </div>
   </div>
-  <!-- Deprecated 
-  <div class="space-y-4">
-    <p class="pt-4">Upload files you want to DECRYPT here</p>
-    <input
-      ref="fileInput"
-      type="file"
-      multiple
-      class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
-      @change="handleFileUpload"
-    />
-    <div>
-      <p>You can download the decrypted file over here</p>
-    </div>
-    <div v-for="(file, index) in originalFilename" :key="index" class="pt-2">
-      <a
-        :href="decryptedFileURL[index]"
-        :download="file"
-        class="text-blue-500 hover:text-blue-800"
-        >Download -> {{ file }}</a
-      >
-    </div>
-  </div>
-  
-  -->
 </template>
-
 <script>
 import { useVaultStore } from '@/stores/vault'
 
