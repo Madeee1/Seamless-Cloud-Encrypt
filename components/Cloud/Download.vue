@@ -3,7 +3,7 @@
     <br />
     <h1>Download</h1>
     <br />
-    <button @click="filesList">Files List</button>
+    <button @click="filesList">Refresh Files List</button>
     <ul class="">
       <li v-for="file in files" :key="file.id" class="">
         <div class="">
@@ -54,34 +54,6 @@ export default {
 
         const data = await response.json()
         this.files = data.value // store list of files
-
-        // Fetch thumbnails of each file
-        for (const file of this.files) {
-          if (file.file) {
-            const thumbnailResponse = await fetch(
-              `https://graph.microsoft.com/v1.0/me/drive/items/${file.id}/thumbnails`,
-              {
-                method: 'GET',
-                headers: {
-                  Authorization: `Bearer ${this.accessToken}`,
-                  'Content-Type': 'application/json',
-                },
-              }
-            )
-
-            if (thumbnailResponse.ok) {
-              const thumbnailData = await thumbnailResponse.json()
-              if (thumbnailData.value && thumbnailData.value.length > 0) {
-                file.thumbnailUrl = thumbnailData.value[0].medium.url // medium size thumbnail
-              } else {
-                console.error(
-                  'Failed to fetch thumbnail:',
-                  thumbnailResponse.statusText
-                )
-              }
-            }
-          }
-        }
       } catch (err) {
         this.error = `Error listing files: ${err.message}`
         console.error('Error details:', err)
@@ -90,6 +62,9 @@ export default {
 
     async downloadFile(fileId) {
       try {
+        if (!this.accessToken) {
+          throw new Error('Access token not found')
+        }
         const response = await fetch(
           `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/content`,
           {
@@ -99,20 +74,18 @@ export default {
             },
           }
         )
-
-        if (!this.accessToken) {
-          throw new Error('Access token not found')
-        }
+        console.log('Response from downloadFile()')
+        console.log(response)
 
         if (!response.ok) {
           throw new Error(`Failed to download file: ${response.statusText}`)
         }
 
-        const blob = await response.blob() // convert response 2 blob obj - rep. binary data, file
+        const blob = await response.blob()
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = 'downloaded_file' // set file name here!
+        a.download = response.url.split('/').pop()
         document.body.appendChild(a)
         a.click()
         a.remove()

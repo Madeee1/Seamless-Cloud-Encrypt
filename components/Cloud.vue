@@ -8,7 +8,6 @@
       Connect to OneDrive
     </UButton>
     <div
-      v-if="connected"
       class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4"
       role="alert"
     >
@@ -16,10 +15,9 @@
       <div>
         <button @click="showUpload">Upload File</button>
         <button @click="showDownload">Download File</button>
-        <!--
         <CloudUpload v-if="showUploadC" />
-        <CloudDownload v-if="showDownloadC" />  
-      --></div>
+        <CloudDownload v-if="showDownloadC" />
+      </div>
     </div>
     <div
       v-if="error"
