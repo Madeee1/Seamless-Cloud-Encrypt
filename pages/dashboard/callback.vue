@@ -7,12 +7,6 @@
       role="alert"
     >
       <p>Connected to OneDrive.</p>
-      <div>
-        <button @click="showUpload">Upload File</button>
-        <button @click="showDownload">Download File</button>
-        <CloudUpload v-if="showUploadComponent" />
-        <CloudDownload v-if="showDownloadComponent" />
-      </div>
     </div>
     <div
       v-if="error"
