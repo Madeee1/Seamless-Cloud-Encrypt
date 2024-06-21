@@ -8,18 +8,6 @@
       Connect to OneDrive
     </UButton>
     <div
-      class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4"
-      role="alert"
-    >
-      <p>Connected to OneDrive.</p>
-      <div>
-        <button @click="showUpload">Upload File</button>
-        <button @click="showDownload">Download File</button>
-        <CloudUpload v-if="showUploadC" />
-        <CloudDownload v-if="showDownloadC" />
-      </div>
-    </div>
-    <div
       v-if="error"
       class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4"
       role="alert"

@@ -11,7 +11,7 @@
           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
         />
       </div>
-      <div class="mb-6">
+      <div class="mb-3">
         <label class="block text-gray-700 text-sm font-bold mb-2"
           >Description:</label
         >
@@ -19,7 +19,7 @@
           v-model="updatedVaultDescription"
           required
           class="w-[600px] shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          rows="5"
+          rows="2"
         ></textarea>
       </div>
       <div class="flex justify-center">
