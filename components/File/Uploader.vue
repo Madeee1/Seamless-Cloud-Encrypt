@@ -108,49 +108,22 @@ export default {
         this.encryptedFileURL.push(URL.createObjectURL(encryptedBlob))
 
         // Save the file as a File object
-        const encryptedFile = new File(
-          [i, '\n', filenameiv, iv, encryptedData],
-          newFilename,
-          {
-            type: 'application/octet-stream',
-          }
-        )
+        // const encryptedFile = new File(
+        //   [i, '\n', filenameiv, iv, encryptedData],
+        //   newFilename,
+        //   {
+        //     type: 'application/octet-stream',
+        //   }
+        // )
         //await this.uploadFile(encryptedFile)
-
-        const decoder = new TextDecoder()
-        const fileContentString = decoder.decode(encryptedData)
-
-        console.log('TYPE OF ORIGINAL ENCRYPTED DATA = ', typeof encryptedData)
-        console.log(encryptedData)
 
         const fileInfo = {
           fileNameIndex: i,
           fileNameiv: filenameiv,
           fileName: newFilename,
           fileContentiv: iv,
-          // fileContent: fileContentString,
           fileContent: encryptedData,
         }
-
-        console.log('file name = ')
-        console.log(fileInfo.fileName)
-        console.log('type = ', typeof fileInfo.fileName)
-
-        console.log('file name iv = ')
-        console.log(fileInfo.fileNameiv)
-        console.log('type = ', typeof fileInfo.fileNameiv)
-
-        console.log('file name index = ')
-        console.log(fileInfo.fileNameIndex)
-        console.log('type = ', typeof fileInfo.fileNameIndex)
-
-        console.log('file content iv = ')
-        console.log(fileInfo.fileContentiv)
-        console.log('type = ', typeof fileInfo.fileContentiv)
-
-        console.log('file content = ')
-        console.log(fileInfo.fileContent)
-        console.log('type = ', typeof fileInfo.fileContent)
 
         await this.uploadFile(fileInfo)
         // await this.uploadFile(encryptedFile)
@@ -166,29 +139,6 @@ export default {
           throw new Error('Access token not found')
         }
 
-        console.log('Using Access Token:', this.accessToken) // Log access token 4 debugging
-
-        // const response = await fetch(
-        //   `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${file.name}:/content`,
-        //   {
-        //     method: 'PUT',
-        //     headers: {
-        //       Authorization: `Bearer ${this.accessToken}`,
-        //       'Content-Type': file.type,
-        //       apikey: import.meta.env.VITE_CLIENT_SECRET,
-        //     },
-        //     body: file,
-        //   }
-        // )
-        const apikey = import.meta.env.VITE_CLIENT_SECRET
-        console.log('apikey type = ', typeof apikey)
-
-        console.log('type of access token = ', typeof this.accessToken)
-
-        console.log('!!!! testing file.fileContent = ')
-        console.log(file.fileContent)
-        console.log('type = ', typeof file.fileContent)
-
         const fileContentBase64 = this.arrayBufferToBase64(file.fileContent)
         const fileNameivBase64 = this.arrayBufferToBase64(file.fileNameiv)
         const fileContentivBase64 = this.arrayBufferToBase64(file.fileContentiv)
@@ -197,16 +147,11 @@ export default {
           method: 'POST',
           body: {
             fileNameIndex: file.fileNameIndex,
-            // fileNameiv: file.fileNameiv,
             fileNameiv: fileNameivBase64,
             fileName: file.fileName,
-            // fileContentiv: file.fileContentiv,
             fileContentiv: fileContentivBase64,
-            // file,
             accessToken: this.accessToken,
             apikey: import.meta.env.VITE_CLIENT_SECRET,
-            // fileContent: file.fileContent,
-            // fileContent: 'testing file content',
             fileContent: fileContentBase64,
           },
         })
