@@ -115,13 +115,51 @@ export default {
             type: 'application/octet-stream',
           }
         )
-        await this.uploadFile(encryptedFile)
+        //await this.uploadFile(encryptedFile)
+
+        const decoder = new TextDecoder()
+        const fileContentString = decoder.decode(encryptedData)
+
+        console.log('TYPE OF ORIGINAL ENCRYPTED DATA = ', typeof encryptedData)
+        console.log(encryptedData)
+
+        const fileInfo = {
+          fileNameIndex: i,
+          fileNameiv: filenameiv,
+          fileName: newFilename,
+          fileContentiv: iv,
+          // fileContent: fileContentString,
+          fileContent: encryptedData,
+        }
+
+        console.log('file name = ')
+        console.log(fileInfo.fileName)
+        console.log('type = ', typeof fileInfo.fileName)
+
+        console.log('file name iv = ')
+        console.log(fileInfo.fileNameiv)
+        console.log('type = ', typeof fileInfo.fileNameiv)
+
+        console.log('file name index = ')
+        console.log(fileInfo.fileNameIndex)
+        console.log('type = ', typeof fileInfo.fileNameIndex)
+
+        console.log('file content iv = ')
+        console.log(fileInfo.fileContentiv)
+        console.log('type = ', typeof fileInfo.fileContentiv)
+
+        console.log('file content = ')
+        console.log(fileInfo.fileContent)
+        console.log('type = ', typeof fileInfo.fileContent)
+
+        await this.uploadFile(fileInfo)
+        // await this.uploadFile(encryptedFile)
       }
     },
 
     // TODO: Only created to handle 1 file at a time
     async uploadFile(file) {
-      console.log('Uploading file:', file.name)
+      console.log('Uploading file:', file.fileName)
       // upload file to OneDrive using Microsoft Graph API
       try {
         if (!this.accessToken) {
@@ -130,18 +168,48 @@ export default {
 
         console.log('Using Access Token:', this.accessToken) // Log access token 4 debugging
 
-        const response = await fetch(
-          `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${file.name}:/content`,
-          {
-            method: 'PUT',
-            headers: {
-              Authorization: `Bearer ${this.accessToken}`,
-              'Content-Type': file.type,
-              apikey: import.meta.env.VITE_CLIENT_SECRET,
-            },
-            body: file,
-          }
-        )
+        // const response = await fetch(
+        //   `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${file.name}:/content`,
+        //   {
+        //     method: 'PUT',
+        //     headers: {
+        //       Authorization: `Bearer ${this.accessToken}`,
+        //       'Content-Type': file.type,
+        //       apikey: import.meta.env.VITE_CLIENT_SECRET,
+        //     },
+        //     body: file,
+        //   }
+        // )
+        const apikey = import.meta.env.VITE_CLIENT_SECRET
+        console.log('apikey type = ', typeof apikey)
+
+        console.log('type of access token = ', typeof this.accessToken)
+
+        console.log('!!!! testing file.fileContent = ')
+        console.log(file.fileContent)
+        console.log('type = ', typeof file.fileContent)
+
+        const fileContentBase64 = this.arrayBufferToBase64(file.fileContent)
+        const fileNameivBase64 = this.arrayBufferToBase64(file.fileNameiv)
+        const fileContentivBase64 = this.arrayBufferToBase64(file.fileContentiv)
+
+        const response = await $fetch('/api/vault/upload', {
+          method: 'POST',
+          body: {
+            fileNameIndex: file.fileNameIndex,
+            // fileNameiv: file.fileNameiv,
+            fileNameiv: fileNameivBase64,
+            fileName: file.fileName,
+            // fileContentiv: file.fileContentiv,
+            fileContentiv: fileContentivBase64,
+            // file,
+            accessToken: this.accessToken,
+            apikey: import.meta.env.VITE_CLIENT_SECRET,
+            // fileContent: file.fileContent,
+            // fileContent: 'testing file content',
+            fileContent: fileContentBase64,
+          },
+        })
 
         if (!response.ok) {
           const errorText = await response.text()
@@ -180,6 +248,15 @@ export default {
       return Array.from(byteArray, function (byte) {
         return ('0' + (byte & 0xff).toString(16)).slice(-2)
       }).join('')
+    },
+    arrayBufferToBase64(buffer) {
+      let binary = ''
+      const bytes = new Uint8Array(buffer)
+      const len = bytes.byteLength
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i])
+      }
+      return btoa(binary)
     },
   },
 }
