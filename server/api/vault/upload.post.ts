@@ -11,15 +11,15 @@ function base64ToArrayBuffer(base64: any) {
 }
 
 export default defineEventHandler(async (event) => {
-  // const user = await serverSupabaseUser(event)
+  const user = await serverSupabaseUser(event)
 
-  // // check user is authenticated
-  // if (!user) {
-  //   throw createError({
-  //     statusCode: 401,
-  //     statusMessage: 'Unauthorized',
-  //   })
-  // }
+  // check user is authenticated
+  if (!user) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: 'Unauthorized',
+    })
+  }
 
   const {
     fileNameIndex,
