@@ -67,13 +67,13 @@ export default {
     async decryptFile(fileBlob, filename) {
       const vaultStore = useVaultStore()
       // convert file to arraybuffer
-      const encryptedData = await fileBlob.arrayBuffer()
+      // const encryptedData = await fileBlob.arrayBuffer()
 
       // get key and filename from pinia store
       const cryptoKeyObj = vaultStore.key
 
       // extract index of orignal encrypted filename
-      const separatorIndex = new Uint8Array(encryptedData).indexOf(
+      const separatorIndex = new Uint8Array(fileBlob).indexOf(
         '\n'.charCodeAt(0)
       )
 
@@ -83,21 +83,18 @@ export default {
       const encryptedFilename = encFNameUInt8Array.buffer
 
       // extract filename iv from encrypted file
-      const filenameivBuffer = encryptedData.slice(
+      const filenameivBuffer = fileBlob.slice(
         separatorIndex + 1,
         separatorIndex + 13
       )
       const filenameiv = new Uint8Array(filenameivBuffer)
 
       // extract iv from encrypted file
-      const ivBuffer = encryptedData.slice(
-        separatorIndex + 13,
-        separatorIndex + 25
-      )
+      const ivBuffer = fileBlob.slice(separatorIndex + 13, separatorIndex + 25)
       const iv = new Uint8Array(ivBuffer)
 
       // extract encrypted content from encrypted file
-      const ciphertext = encryptedData.slice(separatorIndex + 25)
+      const ciphertext = fileBlob.slice(separatorIndex + 25)
 
       let originalFilename = ''
       // decrypt filename
@@ -195,24 +192,45 @@ export default {
         if (!this.accessToken) {
           throw new Error('Access token not found')
         }
-        const response = await fetch(
-          `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/content`,
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${this.accessToken}`,
-            },
-          }
-        )
+        // const response = await fetch(
+        //   `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/content`,
+        //   {
+        //     method: 'GET',
+        //     headers: {
+        //       Authorization: `Bearer ${this.accessToken}`,
+        //     },
+        //   }
+        // )
+
+        const response = await $fetch('/api/vault/download', {
+          method: 'POST',
+          body: {
+            accessToken: this.accessToken,
+            fileId: fileId,
+          },
+        })
 
         if (!response.ok) {
           throw new Error(`Failed to download file: ${response.statusText}`)
         }
 
+        // console.log('RESPONSE = ')
+        // console.log(response)
+        const encryptedFileArrayBuffer = this.base64ToArrayBuffer(
+          response.encryptedBlob
+        )
+        console.log('original base 64 = \n', response.encryptedBlob)
+        console.log('encrypted array buffer = \n', encryptedFileArrayBuffer)
+
         // Decrypt File here
-        const encryptedFilename = response.url.split('/').pop()
-        const blob = await response.blob()
-        const decryptedFile = await this.decryptFile(blob, encryptedFilename)
+        // const encryptedFilename = response.url.split('/').pop()
+        // const blob = await response.blob()
+        console.log('encrypted filename = ', response.encryptedFilename)
+
+        const decryptedFile = await this.decryptFile(
+          encryptedFileArrayBuffer,
+          response.encryptedFilename
+        )
 
         // Download the decrypted file
         const url = window.URL.createObjectURL(decryptedFile)
@@ -248,6 +266,15 @@ export default {
       }
 
       return byteArray
+    },
+    base64ToArrayBuffer(base64) {
+      const binaryString = atob(base64)
+      const len = binaryString.length
+      const bytes = new Uint8Array(len)
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      return bytes.buffer
     },
   },
 }

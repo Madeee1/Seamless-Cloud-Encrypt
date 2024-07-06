@@ -117,6 +117,7 @@ export default {
         // )
         //await this.uploadFile(encryptedFile)
 
+        // file info details for file creation in server
         const fileInfo = {
           fileNameIndex: i,
           fileNameiv: filenameiv,
