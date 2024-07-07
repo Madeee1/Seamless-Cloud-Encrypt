@@ -1,6 +1,19 @@
 <template>
   <div class="max-w-md p-4">
     <h1 class="text-2xl font-bold mb-4">Download:</h1>
+    <div v-if="confirmPassword">
+      <label for="confirm-password">Confirm Password:</label>
+      <input
+        id="confirm-password"
+        v-model="password"
+        type="password"
+        placeholder="Enter vault password"
+        class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
+      />
+      <UButton class="mx-4 mt-4" @click="confirmDownload">Confirm</UButton>
+      <br />
+      <br />
+    </div>
     <button
       class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
       @click="filesList"
@@ -26,7 +39,7 @@
         </div>
         <UButton
           class="text-white font-bold py-1 px-3 rounded"
-          @click="downloadFile(file.id)"
+          @click="handleDownload(file.id)"
         >
           Download
         </UButton>
@@ -54,6 +67,9 @@ export default {
       accessToken: sessionStorage.getItem('access_token') || null,
       files: [],
       error: null,
+      password: null,
+      selectedFileid: null,
+      confirmPassword: false,
     }
   },
   methods: {
@@ -64,6 +80,11 @@ export default {
     //   document.body.appendChild(a)
     //   a.click()
     // },
+    handleDownload(fileId) {
+      this.confirmPassword = true
+      this.selectedFileid = fileId
+    },
+
     async decryptFile(fileArrayBuffer, filename) {
       const vaultStore = useVaultStore()
       // file converted to arrayBuffer in backend
@@ -211,8 +232,6 @@ export default {
         )
 
         // Decrypt File here
-        console.log('encrypted filename = ', response.encryptedFilename)
-
         const decryptedFile = await this.decryptFile(
           encryptedFileArrayBuffer,
           response.encryptedFilename
@@ -253,6 +272,7 @@ export default {
 
       return byteArray
     },
+
     base64ToArrayBuffer(base64) {
       const binaryString = atob(base64)
       const len = binaryString.length
@@ -261,6 +281,34 @@ export default {
         bytes[i] = binaryString.charCodeAt(i)
       }
       return bytes.buffer
+    },
+
+    async confirmDownload() {
+      const vault = useVaultStore()
+      try {
+        const response = await $fetch('/api/vault/downloadConfirm', {
+          method: 'POST',
+          body: {
+            password: this.password,
+            vaultId: vault.id,
+          },
+        })
+
+        if (response.ok) {
+          this.downloadFile(this.selectedFileid)
+          this.confirmPassword = false
+          this.selectedFileid = null
+          this.password = null
+        }
+      } catch (error) {
+        if (!error.response) {
+          alert('Network error, try again later!')
+        } else if (error.response.status === 401) {
+          alert('Wrong password, try again!')
+        } else if (error.response.status === 500) {
+          alert('Server error, try again later!')
+        }
+      }
     },
   },
 }
