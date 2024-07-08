@@ -3,6 +3,7 @@
     <VaultUpdate />
     <VaultDelete />
     <Cloud />
+    <VaultManage />
   </div>
 </template>
 
