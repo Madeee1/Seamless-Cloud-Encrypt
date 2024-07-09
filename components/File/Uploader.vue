@@ -118,10 +118,13 @@ export default {
         //await this.uploadFile(encryptedFile)
 
         // file info details for file creation in server
+
+        const fileNameivBase64 = this.toBase64Url(filenameiv)
+
         const fileInfo = {
           fileNameIndex: i,
-          fileNameiv: filenameiv,
-          fileName: newFilename,
+          // fileNameiv: filenameiv,
+          fileName: `${fileNameivBase64}${newFilename}`,
           fileContentiv: iv,
           fileContent: encryptedData,
         }
@@ -141,14 +144,13 @@ export default {
         }
 
         const fileContentBase64 = this.arrayBufferToBase64(file.fileContent)
-        const fileNameivBase64 = this.arrayBufferToBase64(file.fileNameiv)
         const fileContentivBase64 = this.arrayBufferToBase64(file.fileContentiv)
 
         const response = await $fetch('/api/vault/upload', {
           method: 'POST',
           body: {
             fileNameIndex: file.fileNameIndex,
-            fileNameiv: fileNameivBase64,
+            // fileNameiv: fileNameivBase64,
             fileName: file.fileName,
             fileContentiv: fileContentivBase64,
             accessToken: this.accessToken,
