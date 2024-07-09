@@ -108,40 +108,54 @@ export default {
         this.encryptedFileURL.push(URL.createObjectURL(encryptedBlob))
 
         // Save the file as a File object
-        const encryptedFile = new File(
-          [i, '\n', filenameiv, iv, encryptedData],
-          newFilename,
-          {
-            type: 'application/octet-stream',
-          }
-        )
-        await this.uploadFile(encryptedFile)
+        // const encryptedFile = new File(
+        //   [i, '\n', filenameiv, iv, encryptedData],
+        //   newFilename,
+        //   {
+        //     type: 'application/octet-stream',
+        //   }
+        // )
+        //await this.uploadFile(encryptedFile)
+
+        // file info details for file creation in server
+        const fileInfo = {
+          fileNameIndex: i,
+          fileNameiv: filenameiv,
+          fileName: newFilename,
+          fileContentiv: iv,
+          fileContent: encryptedData,
+        }
+
+        await this.uploadFile(fileInfo)
+        // await this.uploadFile(encryptedFile)
       }
     },
 
     // TODO: Only created to handle 1 file at a time
     async uploadFile(file) {
-      console.log('Uploading file:', file.name)
+      console.log('Uploading file:', file.fileName)
       // upload file to OneDrive using Microsoft Graph API
       try {
         if (!this.accessToken) {
           throw new Error('Access token not found')
         }
 
-        console.log('Using Access Token:', this.accessToken) // Log access token 4 debugging
+        const fileContentBase64 = this.arrayBufferToBase64(file.fileContent)
+        const fileNameivBase64 = this.arrayBufferToBase64(file.fileNameiv)
+        const fileContentivBase64 = this.arrayBufferToBase64(file.fileContentiv)
 
-        const response = await fetch(
-          `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${file.name}:/content`,
-          {
-            method: 'PUT',
-            headers: {
-              Authorization: `Bearer ${this.accessToken}`,
-              'Content-Type': file.type,
-              apikey: import.meta.env.VITE_CLIENT_SECRET,
-            },
-            body: file,
-          }
-        )
+        const response = await $fetch('/api/vault/upload', {
+          method: 'POST',
+          body: {
+            fileNameIndex: file.fileNameIndex,
+            fileNameiv: fileNameivBase64,
+            fileName: file.fileName,
+            fileContentiv: fileContentivBase64,
+            accessToken: this.accessToken,
+            // apikey: import.meta.env.VITE_CLIENT_SECRET,
+            fileContent: fileContentBase64,
+          },
+        })
 
         if (!response.ok) {
           const errorText = await response.text()
@@ -180,6 +194,15 @@ export default {
       return Array.from(byteArray, function (byte) {
         return ('0' + (byte & 0xff).toString(16)).slice(-2)
       }).join('')
+    },
+    arrayBufferToBase64(buffer) {
+      let binary = ''
+      const bytes = new Uint8Array(buffer)
+      const len = bytes.byteLength
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i])
+      }
+      return btoa(binary)
     },
   },
 }

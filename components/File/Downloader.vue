@@ -1,6 +1,19 @@
 <template>
   <div class="max-w-md p-4">
     <h1 class="text-2xl font-bold mb-4">Download:</h1>
+    <div v-if="confirmPassword">
+      <label for="confirm-password">Confirm Password:</label>
+      <input
+        id="confirm-password"
+        v-model="password"
+        type="password"
+        placeholder="Enter vault password"
+        class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
+      />
+      <UButton class="mx-4 mt-4" @click="confirmDownload">Confirm</UButton>
+      <br />
+      <br />
+    </div>
     <button
       class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
       @click="filesList"
@@ -26,7 +39,7 @@
         </div>
         <UButton
           class="text-white font-bold py-1 px-3 rounded"
-          @click="downloadFile(file.id)"
+          @click="handleDownload(file.id)"
         >
           Download
         </UButton>
@@ -54,6 +67,9 @@ export default {
       accessToken: sessionStorage.getItem('access_token') || null,
       files: [],
       error: null,
+      password: null,
+      selectedFileid: null,
+      confirmPassword: false,
     }
   },
   methods: {
@@ -64,16 +80,19 @@ export default {
     //   document.body.appendChild(a)
     //   a.click()
     // },
-    async decryptFile(fileBlob, filename) {
-      const vaultStore = useVaultStore()
-      // convert file to arraybuffer
-      const encryptedData = await fileBlob.arrayBuffer()
+    handleDownload(fileId) {
+      this.confirmPassword = true
+      this.selectedFileid = fileId
+    },
 
+    async decryptFile(fileArrayBuffer, filename) {
+      const vaultStore = useVaultStore()
+      // file converted to arrayBuffer in backend
       // get key and filename from pinia store
       const cryptoKeyObj = vaultStore.key
 
       // extract index of orignal encrypted filename
-      const separatorIndex = new Uint8Array(encryptedData).indexOf(
+      const separatorIndex = new Uint8Array(fileArrayBuffer).indexOf(
         '\n'.charCodeAt(0)
       )
 
@@ -83,21 +102,21 @@ export default {
       const encryptedFilename = encFNameUInt8Array.buffer
 
       // extract filename iv from encrypted file
-      const filenameivBuffer = encryptedData.slice(
+      const filenameivBuffer = fileArrayBuffer.slice(
         separatorIndex + 1,
         separatorIndex + 13
       )
       const filenameiv = new Uint8Array(filenameivBuffer)
 
       // extract iv from encrypted file
-      const ivBuffer = encryptedData.slice(
+      const ivBuffer = fileArrayBuffer.slice(
         separatorIndex + 13,
         separatorIndex + 25
       )
       const iv = new Uint8Array(ivBuffer)
 
       // extract encrypted content from encrypted file
-      const ciphertext = encryptedData.slice(separatorIndex + 25)
+      const ciphertext = fileArrayBuffer.slice(separatorIndex + 25)
 
       let originalFilename = ''
       // decrypt filename
@@ -195,24 +214,28 @@ export default {
         if (!this.accessToken) {
           throw new Error('Access token not found')
         }
-        const response = await fetch(
-          `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/content`,
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${this.accessToken}`,
-            },
-          }
-        )
+
+        const response = await $fetch('/api/vault/download', {
+          method: 'POST',
+          body: {
+            accessToken: this.accessToken,
+            fileId: fileId,
+          },
+        })
 
         if (!response.ok) {
           throw new Error(`Failed to download file: ${response.statusText}`)
         }
 
+        const encryptedFileArrayBuffer = this.base64ToArrayBuffer(
+          response.encryptedBlob
+        )
+
         // Decrypt File here
-        const encryptedFilename = response.url.split('/').pop()
-        const blob = await response.blob()
-        const decryptedFile = await this.decryptFile(blob, encryptedFilename)
+        const decryptedFile = await this.decryptFile(
+          encryptedFileArrayBuffer,
+          response.encryptedFilename
+        )
 
         // Download the decrypted file
         const url = window.URL.createObjectURL(decryptedFile)
@@ -248,6 +271,44 @@ export default {
       }
 
       return byteArray
+    },
+
+    base64ToArrayBuffer(base64) {
+      const binaryString = atob(base64)
+      const len = binaryString.length
+      const bytes = new Uint8Array(len)
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      return bytes.buffer
+    },
+
+    async confirmDownload() {
+      const vault = useVaultStore()
+      try {
+        const response = await $fetch('/api/vault/auth/download', {
+          method: 'POST',
+          body: {
+            password: this.password,
+            vaultId: vault.id,
+          },
+        })
+
+        if (response.ok) {
+          this.downloadFile(this.selectedFileid)
+          this.confirmPassword = false
+          this.selectedFileid = null
+          this.password = null
+        }
+      } catch (error) {
+        if (!error.response) {
+          alert('Network error, try again later!')
+        } else if (error.response.status === 401) {
+          alert('Wrong password, try again!')
+        } else if (error.response.status === 500) {
+          alert('Server error, try again later!')
+        }
+      }
     },
   },
 }
