@@ -48,6 +48,19 @@ async function updateAccountEmail() {
     email: userEmail.value,
   })
 
+  // generate an email change link to be sent to the current email address
+  const { data: currLink } = await supabase.auth.admin.generateLink({
+    type: 'email_change_current',
+    email: user.value.email,
+    newEmail: userEmail.value,
+  })
+
+  // generate an email change link to be sent to the new email address
+  const { data: newLink } = await supabase.auth.admin.generateLink({
+    type: 'email_change_new',
+    email: user.value.email,
+    newEmail: userEmail.value,
+  })
   // TODO: handle error correctly
   if (error) {
     console.error(error)
