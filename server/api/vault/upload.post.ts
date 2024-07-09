@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     fileName,
     fileContentiv,
     accessToken,
-    apikey,
+    // apikey,
     fileContent,
   } = await readBody(event)
 
@@ -49,6 +49,8 @@ export default defineEventHandler(async (event) => {
     }
   )
 
+  const apikey = process.env.CLIENT_SECRET
+
   const response = await fetch(
     `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${fileName}:/content`,
     {
@@ -56,7 +58,7 @@ export default defineEventHandler(async (event) => {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': encryptedFile.type,
-        apikey: apikey,
+        apikey: apikey || '',
       },
       body: encryptedFile,
     }

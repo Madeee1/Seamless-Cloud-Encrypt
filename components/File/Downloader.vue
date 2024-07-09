@@ -286,7 +286,7 @@ export default {
     async confirmDownload() {
       const vault = useVaultStore()
       try {
-        const response = await $fetch('/api/vault/downloadConfirm', {
+        const response = await $fetch('/api/vault/auth/download', {
           method: 'POST',
           body: {
             password: this.password,

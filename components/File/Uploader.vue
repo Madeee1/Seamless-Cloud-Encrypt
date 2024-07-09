@@ -152,7 +152,7 @@ export default {
             fileName: file.fileName,
             fileContentiv: fileContentivBase64,
             accessToken: this.accessToken,
-            apikey: import.meta.env.VITE_CLIENT_SECRET,
+            // apikey: import.meta.env.VITE_CLIENT_SECRET,
             fileContent: fileContentBase64,
           },
         })
