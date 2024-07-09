@@ -49,6 +49,20 @@ async function openVault() {
     if (response.ok) {
       const encryptionKeyObject = await deriveKeyFromPassword(password.value)
 
+      // If the vault is not currently connected to a cloud provider,
+      // Check if there is tokens inside session storage
+      if (
+        !response.data.enc_cloud_access_token ||
+        !response.data.enc_cloud_refresh_token
+      ) {
+        if (
+          sessionStorage.getItem('cloud_access_token') &&
+          sessionStorage.getItem('cloud_refresh_token')
+        ) {
+          console.log('Tokens found in session storage')
+        }
+      }
+
       // TODO: Decrypt tokens
       vault.$patch({
         key: encryptionKeyObject,
