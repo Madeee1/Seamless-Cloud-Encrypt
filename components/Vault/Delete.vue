@@ -17,6 +17,17 @@
       />
       <UButton class="mx-4 mt-4" @click="confirmDelete">Confirm</UButton>
     </div>
+    <div v-if="confirmPassword">
+      <label for="confirm-password">Confirm Password:</label>
+      <input
+        id="confirm-password"
+        v-model="password"
+        type="password"
+        placeholder="Enter vault password"
+        class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
+      />
+      <UButton class="mx-4 mt-4" @click="confirmDelete">Confirm</UButton>
+    </div>
   </div>
 </template>
 <script setup>
