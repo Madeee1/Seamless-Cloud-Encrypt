@@ -4,6 +4,7 @@
     <VaultDelete />
     <Cloud />
     <VaultManage />
+    <VaultAutoLock />
   </div>
 </template>
 
