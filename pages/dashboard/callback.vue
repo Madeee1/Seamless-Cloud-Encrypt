@@ -107,13 +107,4 @@ async function getAccessToken(code) {
     console.error('Error details:', err) // Log detailed error information
   }
 }
-
-function showUpload() {
-  showUploadComponent.value = true
-  showDownloadComponent.value = false
-}
-function showDownload() {
-  showUploadComponent.value = false
-  showDownloadComponent.value = true
-}
 </script>

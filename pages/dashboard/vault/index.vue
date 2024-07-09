@@ -9,7 +9,7 @@
 definePageMeta({
   title: 'Vault',
   description: 'Vault',
-  layout: 'vault',
+  // layout: 'vault',
   middleware: 'vault-auth',
 })
 </script>
