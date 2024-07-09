@@ -34,7 +34,7 @@
             class="w-10 h-10 mr-4 rounded"
           />
           <span class="font-medium">
-            {{ file.name }}
+            {{ file.oriFilename }}
           </span>
         </div>
         <UButton
@@ -85,6 +85,27 @@ export default {
       this.selectedFileid = fileId
     },
 
+    async previewFilename(filename) {
+      const vaultStore = useVaultStore()
+      const cryptoKeyObj = vaultStore.key
+
+      const encryptedFilenameB64 = filename.replace(/\.bin$/, '')
+      const encFNameUInt8Array = this.fromBase64Url(encryptedFilenameB64)
+      const encryptedFilenameAndiv = encFNameUInt8Array.buffer
+
+      const fileNameiv = encryptedFilenameAndiv.slice(0, 12)
+      const encryptedFilename = encryptedFilenameAndiv.slice(12)
+
+      const decryptedFilename = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: fileNameiv },
+        cryptoKeyObj,
+        encryptedFilename
+      )
+      const originalFilename = new TextDecoder().decode(decryptedFilename)
+
+      return originalFilename
+    },
+
     async decryptFile(fileArrayBuffer, filename) {
       const vaultStore = useVaultStore()
       // file converted to arrayBuffer in backend
@@ -102,21 +123,24 @@ export default {
       const encryptedFilename = encFNameUInt8Array.buffer
 
       // extract filename iv from encrypted file
-      const filenameivBuffer = fileArrayBuffer.slice(
+      const ivBuffer = fileArrayBuffer.slice(
         separatorIndex + 1,
         separatorIndex + 13
       )
-      const filenameiv = new Uint8Array(filenameivBuffer)
-
-      // extract iv from encrypted file
-      const ivBuffer = fileArrayBuffer.slice(
-        separatorIndex + 13,
-        separatorIndex + 25
-      )
       const iv = new Uint8Array(ivBuffer)
 
+      // extract iv from encrypted file
+      // const ivBuffer = fileArrayBuffer.slice(
+      //   separatorIndex + 13,
+      //   separatorIndex + 25
+      // )
+      // const iv = new Uint8Array(ivBuffer)
+
       // extract encrypted content from encrypted file
-      const ciphertext = fileArrayBuffer.slice(separatorIndex + 25)
+      const ciphertext = fileArrayBuffer.slice(separatorIndex + 13)
+
+      const filenameiv = encryptedFilename.slice(0, 12)
+      const encryptedFilenameOnly = encryptedFilename.slice(12)
 
       let originalFilename = ''
       // decrypt filename
@@ -124,7 +148,7 @@ export default {
         const decryptedFilename = await crypto.subtle.decrypt(
           { name: 'AES-GCM', iv: filenameiv },
           cryptoKeyObj,
-          encryptedFilename
+          encryptedFilenameOnly
         )
         originalFilename = new TextDecoder().decode(decryptedFilename)
         this.originalFilename.push(originalFilename)
@@ -174,6 +198,12 @@ export default {
 
         const data = await response.json()
         this.files = data.value // store list of files
+
+        for (let i = 0; i < this.files.length; i++) {
+          const oriFilename = await this.previewFilename(this.files[i].name)
+
+          this.files[i].oriFilename = oriFilename
+        }
 
         // TODO: IMPLEMENT
         // Fetch thumbnails of each file

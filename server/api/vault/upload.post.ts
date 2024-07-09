@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
 
   const {
     fileNameIndex,
-    fileNameiv,
+    // fileNameiv,
     fileName,
     fileContentiv,
     accessToken,
@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
     fileContent,
   } = await readBody(event)
 
-  const fileNameivBuffer = base64ToArrayBuffer(fileNameiv)
+  // const fileNameivBuffer = base64ToArrayBuffer(fileNameiv)
   const fileContentivBuffer = base64ToArrayBuffer(fileContentiv)
   const fileContentBuffer = base64ToArrayBuffer(fileContent)
 
@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
     [
       fileNameIndex,
       '\n',
-      fileNameivBuffer,
+      // fileNameivBuffer,
       fileContentivBuffer,
       fileContentBuffer,
     ],
@@ -69,8 +69,6 @@ export default defineEventHandler(async (event) => {
     throw new Error(
       `Failed to upload file: ${response.statusText} - ${errorText}`
     )
-  } else {
-    console.log('response ok server side')
   }
 
   return { ok: true }
