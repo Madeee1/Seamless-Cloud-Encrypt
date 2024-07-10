@@ -24,18 +24,21 @@
         </UFormGroup>
 
         <div class="text-left mt-2">
-          <a href='/forgot-password' @click.prevent="toForgotPassword" class="text-blue-500 hover: underline">
+          <a
+            href="/forgot-password"
+            class="text-blue-500 hover: underline"
+            @click.prevent="toForgotPassword"
+          >
             Forgot Password?
           </a>
         </div>
-    
+
         <div class="flex">
           <UButton type="submit"> Submit </UButton>
           <span class="text-red-500 ml-2 text-sm my-auto">
             {{ errorMessage }}
           </span>
         </div>
-
       </UForm>
     </UCard>
   </div>
