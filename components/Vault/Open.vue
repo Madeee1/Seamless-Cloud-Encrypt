@@ -57,7 +57,6 @@ async function openVault() {
         encryptionKeyObject
       )
 
-      // TODO: Decrypt tokens
       vault.$patch({
         key: encryptionKeyObject,
         name: response.data.name,

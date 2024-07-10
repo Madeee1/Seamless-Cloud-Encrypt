@@ -8,7 +8,8 @@ export const useCreateVaultStore = defineStore({
     hashedPassword: '',
     cloudProvider: '',
     cloudFolderName: '',
-    passwordDerivedKeyObject: CryptoKey | undefined,
+    password: '',
+    key: CryptoKey | undefined,
   }),
   actions: {},
   persist: {

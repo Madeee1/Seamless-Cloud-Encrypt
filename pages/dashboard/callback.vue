@@ -21,6 +21,8 @@
 <script setup>
 const error = ref('')
 const createVaultStore = useCreateVaultStore()
+const supabase = useSupabaseClient()
+const user = useSupabaseUser()
 
 // TODO: CHANGE AFTER
 const accessToken = ref('')
@@ -28,53 +30,57 @@ const refreshToken = ref('')
 const tokenExpiryTime = ref('')
 const connected = ref(false)
 onMounted(() => {
-  try {
-    // Access token area
-    const URLparams = new URLSearchParams(window.location.search)
-    const code = URLparams.get('code') // get auth code from URL
-    if (code) {
-      getAccessToken(code) // exchange for access token if code exists
-    } else {
-      const error = URLparams.get('error')
-      if (error) {
-        error.value = `Error from authorization server: ${error}`
+  async function handleCallback() {
+    try {
+      // Access token area
+      const URLparams = new URLSearchParams(window.location.search)
+      const code = URLparams.get('code') // get auth code from URL
+      if (code) {
+        await getAccessToken(code) // exchange for access token if code exists
+      } else {
+        const error = URLparams.get('error')
+        if (error) {
+          error.value = `Error from authorization server: ${error}`
+        }
       }
+
+      // Save vault to supabase
+      await createVault()
+
+      navigateTo('/dashboard')
+    } catch (err) {
+      error.value = `Error during vault creation: ${err.message}`
     }
-
-    // Save vault to supabase
-    createVault()
-
-    navigateTo('/dashboard')
-  } catch (err) {
-    error.value = `Error during vault creation: ${err.message}`
   }
+
+  handleCallback()
 })
 
 // Functions on vault creation
 async function createVault() {
+  console.log('createVault is running')
+
+  createVaultStore.key = await deriveKeyFromPassword(createVaultStore.password)
+
   // encrypt the access and refresh token using the key
   const encryptedAccessToken = await encrypt(
     accessToken.value,
-    createVaultStore.passwordDerivedKeyObject
+    createVaultStore.key
   )
   const encryptedRefreshToken = await encrypt(
     refreshToken.value,
-    createVaultStore.passwordDerivedKeyObject
+    createVaultStore.key
   )
 
   const decryptedAccessToken = await decrypt(
     encryptedAccessToken,
-    createVaultStore.passwordDerivedKeyObject
+    createVaultStore.key
   )
   const decryptedRefreshToken = await decrypt(
     encryptedRefreshToken,
-    createVaultStore.passwordDerivedKeyObject
+    createVaultStore.key
   )
 
-  console.log('Actual access token:', accessToken.value)
-  console.log('Actual refresh token:', refreshToken.value)
-  console.log('Decrypted access token:', decryptedAccessToken)
-  console.log('Decrypted refresh token:', decryptedRefreshToken)
   const { error } = await supabase.from('vault').insert({
     name: createVaultStore.name,
     cloud_folder_name: createVaultStore.cloudFolderName,
@@ -84,6 +90,8 @@ async function createVault() {
     enc_cloud_access_token: encryptedAccessToken,
     enc_cloud_refresh_token: encryptedRefreshToken,
   })
+
+  createVaultStore.$reset()
 
   // TODO: Handle error
   if (error) {
@@ -150,14 +158,10 @@ async function getAccessToken(code) {
     refreshToken.value = response.refresh_token // store refresh token
     tokenExpiryTime.value = Date.now() + response.expires_in * 1000 // Calculate token expiration time
 
-    // TODO: DEPRECATE?
-    sessionStorage.setItem('access_token', accessToken.value)
-    sessionStorage.setItem('refresh_token', refreshToken.value)
-    sessionStorage.setItem('token_expiry_time', tokenExpiryTime.value)
-
     console.log('Access Token:', accessToken.value) // debugging - log access token
     connected.value = true
-    window.history.replaceState({}, document.title, '/') // clean URL
+    // clean url of its parameters without cleaning the /dashboard/callback
+    window.history.replaceState({}, document.title, '/dashboard/callback')
 
     // TODO:
     // this.setTokenRefreshInterval()
@@ -250,5 +254,34 @@ function base64ToArrayBuffer(base64) {
     bytes[i] = binaryString.charCodeAt(i)
   }
   return bytes.buff
+}
+
+async function deriveKeyFromPassword(password) {
+  const salt = new Uint8Array([1, 2, 3, 4])
+  const encoder = new TextEncoder()
+  const encodedPassword = encoder.encode(password)
+
+  // Import key here is used to set the "structure" of the key
+  const derivedKey = await crypto.subtle.importKey(
+    'raw',
+    encodedPassword,
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey']
+  )
+  const key = await crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 110000,
+      hash: 'SHA-256',
+    },
+    derivedKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  )
+
+  return key
 }
 </script>

@@ -63,6 +63,12 @@
 
 <script setup>
 import bcrypt from 'bcryptjs'
+import { v4 as uuidv4 } from 'uuid'
+
+// TODO: Deprecate use of crypto-js in favor of built-in Web Crypto API and btoa()
+import sha256 from 'crypto-js/sha256'
+import Base64 from 'crypto-js/enc-base64'
+
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
 const createVaultStore = useCreateVaultStore()
@@ -77,40 +83,9 @@ async function saveCreateVault() {
   const hashPass = await bcrypt.hash(vaultPassword.value, saltRounds)
 
   createVaultStore.hashedPassword = hashPass
-  createVaultStore.passwordDerivedKeyObject = await deriveKeyFromPassword(
-    vaultPassword.value
-  )
+  createVaultStore.password = vaultPassword.value
 
   connectToOneDrive()
-}
-
-async function deriveKeyFromPassword(password) {
-  const salt = new Uint8Array([1, 2, 3, 4])
-  const encoder = new TextEncoder()
-  const encodedPassword = encoder.encode(password)
-
-  // Import key here is used to set the "structure" of the key
-  const derivedKey = await crypto.subtle.importKey(
-    'raw',
-    encodedPassword,
-    { name: 'PBKDF2' },
-    false,
-    ['deriveKey']
-  )
-  const key = await crypto.subtle.deriveKey(
-    {
-      name: 'PBKDF2',
-      salt: salt,
-      iterations: 110000,
-      hash: 'SHA-256',
-    },
-    derivedKey,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['encrypt', 'decrypt']
-  )
-
-  return key
 }
 
 // Code for CONNECTING TO ONEDRIVE
