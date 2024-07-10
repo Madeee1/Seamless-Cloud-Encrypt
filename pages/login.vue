@@ -23,12 +23,19 @@
           />
         </UFormGroup>
 
+        <div class="text-left mt-2">
+          <a href='/forgot-password' @click.prevent="toForgotPassword" class="text-blue-500 hover: underline">
+            Forgot Password?
+          </a>
+        </div>
+    
         <div class="flex">
           <UButton type="submit"> Submit </UButton>
           <span class="text-red-500 ml-2 text-sm my-auto">
             {{ errorMessage }}
           </span>
         </div>
+
       </UForm>
     </UCard>
   </div>
@@ -91,6 +98,10 @@ async function signup() {
   } catch (error: any) {
     errorMessage.value = error.message
   }
+}
+
+function toForgotPassword() {
+  navigateTo('/forgot-password')
 }
 
 // Login or signup functionality
