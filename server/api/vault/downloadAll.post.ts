@@ -81,11 +81,14 @@ async function downloadFilesInFolder(accessToken: string, folderId: string) {
         )
       }
 
-      const fileContent = await fileResponse.blob()
-      // Handle the file content, for example, save it to the server
-      console.log(`Downloaded file: ${item.name}`)
-      console.log('object type = ', typeof item)
-      downloadedFiles.push({ name: item.name, content: fileContent })
+      const encryptedFilename = fileResponse.url.split('/').pop()
+      const encryptedFileBlob = await fileResponse.blob()
+      const encryptedFileBuffer = await encryptedFileBlob.arrayBuffer()
+      const encryptedFileBase64 = arrayBufferToBase64(encryptedFileBuffer)
+      downloadedFiles.push({
+        name: encryptedFilename,
+        content: encryptedFileBase64,
+      })
       // saveFile(item.name, fileContent); // Implement your own save logic
     }
   }
@@ -112,25 +115,12 @@ export default defineEventHandler(async (event) => {
 
     const folderId = await getFolderIdByName(accessToken, folderName)
     const downloadedFiles = await downloadFilesInFolder(accessToken, folderId)
-    const downloadedFilesBase64 = []
 
     console.log('files length = ', downloadedFiles.length)
 
-    for (const item of downloadedFiles) {
-      console.log('file name = ', item.name)
-
-      const encryptedFileBuffer = await item.content.arrayBuffer()
-      const encryptedFileBase64 = arrayBufferToBase64(encryptedFileBuffer)
-
-      downloadedFilesBase64.push({
-        name: item.name,
-        content: encryptedFileBase64,
-      })
-    }
-
     return {
       ok: true,
-      files: downloadedFilesBase64,
+      files: downloadedFiles,
     }
   } catch (error) {
     console.error('Error fetching file from OneDrive:', error)

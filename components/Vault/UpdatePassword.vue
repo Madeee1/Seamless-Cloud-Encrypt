@@ -54,11 +54,46 @@ const user = useSupabaseUser()
 
 const vault = useVaultStore()
 
+const cryptoKeyObj = vault.key
 const confirmPassword = ref(false)
 const accessToken = sessionStorage.getItem('access_token') || null
 const passwordConfirmation = ref('')
 const newPassword = ref('')
 const newPasswordConfirmation = ref('')
+const fileBuffers = []
+const decryptedFiles = []
+
+function base64ToArrayBuffer(base64) {
+  const binaryString = atob(base64)
+  const len = binaryString.length
+  const bytes = new Uint8Array(len)
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i)
+  }
+  return bytes.buffer
+}
+
+function fromBase64Url(base64UrlString) {
+  // Replace URL-safe characters back to their original
+  const base64String = base64UrlString.replace(/-/g, '+').replace(/_/g, '/')
+
+  // Pad the base64 string to make its length a multiple of 4
+  const paddedBase64String = base64String.padEnd(
+    base64String.length + ((4 - (base64String.length % 4)) % 4),
+    '='
+  )
+
+  // Decode base64 string to a UTF-16 string
+  const decodedString = window.atob(paddedBase64String)
+
+  // Convert decoded string to byte array
+  const byteArray = new Uint8Array(decodedString.length)
+  for (let i = 0; i < decodedString.length; i++) {
+    byteArray[i] = decodedString.charCodeAt(i)
+  }
+
+  return byteArray
+}
 
 async function confirmUpdate() {
   try {
@@ -72,7 +107,9 @@ async function confirmUpdate() {
 
     if (response.ok && newPassword.value == newPasswordConfirmation.value) {
       console.log('mantap ajg')
-      downloadAll()
+      await downloadAll()
+      console.log('NOW UPLOADING...')
+      uploadAll()
       // updatePassword()
       // decrypt all files inside
       // re encrpt all files inside
@@ -115,6 +152,9 @@ async function updatePassword() {
 }
 
 async function downloadAll() {
+  let plainText = ''
+  let originalFilename = ''
+
   const response = await $fetch('/api/vault/downloadAll', {
     method: 'POST',
     body: {
@@ -123,5 +163,76 @@ async function downloadAll() {
   })
 
   console.log('response files length = ', response.files.length)
+
+  // for (let i = 0; i < response.files.length; i++) {
+  //   const fileBuffer = base64ToArrayBuffer(response.files[i].content)
+  //   console.log(response.files[i].name)
+  //   fileBuffers.push({
+  //     fileName: response.files[i].name,
+  //     fileContent: fileBuffer,
+  //   })
+  // }
+
+  const encoder = new TextEncoder()
+
+  for (let i = 0; i < response.files.length; i++) {
+    // decrypt filename
+    const encryptedFilenameB64 = response.files[i].name.replace(/\.bin$/, '')
+    const encFNameUInt8Array = fromBase64Url(encryptedFilenameB64)
+    const encryptedFilename = encFNameUInt8Array.buffer
+
+    const fileNameiv = encryptedFilename.slice(0, 12)
+    const encryptedFilenameOnly = encryptedFilename.slice(12)
+
+    console.log('filename iv = ', fileNameiv)
+    console.log('encrypted filename = ', encryptedFilenameOnly)
+
+    try {
+      const decryptedFilename = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: fileNameiv },
+        cryptoKeyObj,
+        encryptedFilenameOnly
+      )
+      originalFilename = new TextDecoder().decode(decryptedFilename)
+      console.log('original filename = ', originalFilename)
+    } catch (error) {
+      console.error('error during filename decryption: ', error)
+    }
+
+    //decrypt file content
+    const fileContentBuffer = base64ToArrayBuffer(response.files[i].content)
+
+    const separatorIndex = new Uint8Array(fileContentBuffer).indexOf(
+      '\n'.charCodeAt(0)
+    )
+
+    const ivBuffer = fileContentBuffer.slice(
+      separatorIndex + 1,
+      separatorIndex + 13
+    )
+    const iv = new Uint8Array(ivBuffer)
+    const ciphertext = fileContentBuffer.slice(separatorIndex + 13)
+
+    try {
+      const decryptedData = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: iv },
+        cryptoKeyObj,
+        ciphertext
+      )
+      plainText = new TextDecoder().decode(decryptedData)
+      console.log('decrypted data = \n', plainText)
+      console.log('')
+    } catch (error) {
+      console.error('error during content decryption: ', error)
+    }
+
+    decryptedFiles.push({ fileName: originalFilename, fileContent: plainText })
+  }
+}
+
+async function uploadAll() {
+  for (let i = 0; i < decryptedFiles.length; i++) {
+    console.log(decryptedFiles[i].fileName)
+  }
 }
 </script>
