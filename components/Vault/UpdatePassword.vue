@@ -62,6 +62,7 @@ const newPassword = ref('')
 const newPasswordConfirmation = ref('')
 const newKey = ref(null)
 const fileBuffers = []
+const originalFIles = ref(null)
 const decryptedFiles = []
 const fileInfo = []
 const reencryptedFiles = []
@@ -118,7 +119,8 @@ async function confirmUpdate() {
       newKey.value = await deriveKeyFromPassword(newPassword.value)
       await reencryptAll()
       await uploadAll()
-      // updatePassword()
+      await deleteAll()
+      await updatePassword()
       // decrypt all files inside
       // re encrpt all files inside
     } else {
@@ -151,11 +153,7 @@ async function updatePassword() {
   if (error) {
     console.error(error)
   } else {
-    console.log(data)
-    vault.$patch({
-      name: data[0].name,
-    })
-    navigateTo('/dashboard/vault')
+    navigateTo('/dashboard')
   }
 }
 
@@ -171,6 +169,7 @@ async function downloadAll() {
   })
 
   console.log('response files length = ', response.files.length)
+  originalFIles.value = response.files
 
   // for (let i = 0; i < response.files.length; i++) {
   //   const fileBuffer = base64ToArrayBuffer(response.files[i].content)
@@ -240,6 +239,26 @@ async function downloadAll() {
       fileContent: decryptedContent,
     })
   }
+}
+
+async function deleteAll() {
+  // delete all current files in the one drive folder
+  const deletePromises = originalFIles.value.map((file) => {
+    const deleteUrl = `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${file.name}`
+    return fetch(deleteUrl, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }).then((response) => {
+      if (!response.ok) {
+        throw new Error(`Failed to delete ${file.name}: ${response.statusText}`)
+      }
+    })
+  })
+
+  await Promise.all(deletePromises)
+  console.log('All files deleted successfully.')
 }
 
 async function deriveKeyFromPassword(password) {
