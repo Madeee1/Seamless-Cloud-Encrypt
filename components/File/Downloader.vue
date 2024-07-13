@@ -96,14 +96,16 @@ export default {
       const fileNameiv = encryptedFilenameAndiv.slice(0, 12)
       const encryptedFilename = encryptedFilenameAndiv.slice(12)
 
-      const decryptedFilename = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: fileNameiv },
-        cryptoKeyObj,
-        encryptedFilename
-      )
-      const originalFilename = new TextDecoder().decode(decryptedFilename)
-
-      return originalFilename
+      try {
+        const decryptedFilename = await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv: fileNameiv },
+          cryptoKeyObj,
+          encryptedFilename
+        )
+        return new TextDecoder().decode(decryptedFilename)
+      } catch (error) {
+        return 'Undecipherable_Filename.txt'
+      }
     },
 
     async decryptFile(fileArrayBuffer, filename) {

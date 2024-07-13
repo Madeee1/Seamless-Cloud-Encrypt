@@ -63,7 +63,9 @@ const newPasswordConfirmation = ref('')
 const newKey = ref(null)
 const fileBuffers = []
 const decryptedFiles = []
+const fileInfo = []
 const reencryptedFiles = []
+let uploadSuccess = false
 
 function base64ToArrayBuffer(base64) {
   const binaryString = atob(base64)
@@ -114,6 +116,7 @@ async function confirmUpdate() {
       console.log('New password = ', newPassword.value)
       console.log('type = ', typeof newPassword.value)
       newKey.value = await deriveKeyFromPassword(newPassword.value)
+      await reencryptAll()
       await uploadAll()
       // updatePassword()
       // decrypt all files inside
@@ -271,7 +274,7 @@ async function deriveKeyFromPassword(password) {
   return key
 }
 
-async function uploadAll() {
+async function reencryptAll() {
   console.log('RE-ENCRYPTING FILES... ')
   for (let i = 0; i < decryptedFiles.length; i++) {
     const decryptedBlob = new Blob([decryptedFiles[i].fileContent], {
@@ -308,17 +311,52 @@ async function uploadAll() {
     const fileNameivB64 = toBase64Url(fileNameiv)
 
     const newFileName = fileNameivB64 + encryptedFilenameB64 + '.bin'
+    const fileContentivB64 = arrayBufferToBase64(contentiv)
+    const fileContentB64 = arrayBufferToBase64(encryptedContent)
 
     reencryptedFiles.push({
       fileNameIndex: i,
       fileName: newFileName,
-      fileContentiv: contentiv,
-      fileContent: encryptedContent,
+      fileContentiv: fileContentivB64,
+      fileContent: fileContentB64,
     })
   }
 
   console.log('Re-encryption of all current uploaded files done.')
   console.log('Re-encrypted files = ', reencryptedFiles.length)
+}
+
+async function uploadAll() {
+  try {
+    if (!accessToken) {
+      throw new Error('Access token not found')
+    }
+
+    const response = await $fetch('/api/vault/uploadAll', {
+      method: 'POST',
+      body: {
+        accessToken: accessToken,
+        files: reencryptedFiles,
+      },
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(
+        `Failed to upload file: ${response.statusText} - ${errorText}`
+      )
+    }
+
+    uploadSuccess = true
+    console.log('File Upload Successful')
+
+    // timer for how long alert last
+    setTimeout(() => {
+      uploadSuccess = false
+    }, 10000)
+  } catch (err) {
+    console.error('Error details:', err)
+  }
 }
 
 function toBase64Url(byteArray) {
@@ -332,5 +370,15 @@ function toBase64Url(byteArray) {
     .replace(/=+$/, '')
 
   return base64UrlString
+}
+
+function arrayBufferToBase64(buffer) {
+  let binary = ''
+  const bytes = new Uint8Array(buffer)
+  const len = bytes.byteLength
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i])
+  }
+  return btoa(binary)
 }
 </script>
