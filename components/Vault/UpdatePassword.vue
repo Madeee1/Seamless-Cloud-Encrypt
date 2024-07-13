@@ -60,8 +60,10 @@ const accessToken = sessionStorage.getItem('access_token') || null
 const passwordConfirmation = ref('')
 const newPassword = ref('')
 const newPasswordConfirmation = ref('')
+const newKey = ref(null)
 const fileBuffers = []
 const decryptedFiles = []
+const reencryptedFiles = []
 
 function base64ToArrayBuffer(base64) {
   const binaryString = atob(base64)
@@ -106,10 +108,13 @@ async function confirmUpdate() {
     })
 
     if (response.ok && newPassword.value == newPasswordConfirmation.value) {
-      console.log('mantap ajg')
+      console.log('Downloading Files...')
       await downloadAll()
-      console.log('NOW UPLOADING...')
-      uploadAll()
+      console.log('Uploading Files...')
+      console.log('New password = ', newPassword.value)
+      console.log('type = ', typeof newPassword.value)
+      newKey.value = await deriveKeyFromPassword(newPassword.value)
+      await uploadAll()
       // updatePassword()
       // decrypt all files inside
       // re encrpt all files inside
@@ -118,7 +123,7 @@ async function confirmUpdate() {
     }
   } catch (error) {
     if (!error.response) {
-      alert('Network error, try again later!')
+      console.error(error)
     } else if (error.response.status === 401) {
       alert('Wrong password, try again!')
     } else if (error.response.status === 500) {
@@ -152,7 +157,7 @@ async function updatePassword() {
 }
 
 async function downloadAll() {
-  let plainText = ''
+  let decryptedContent = ''
   let originalFilename = ''
 
   const response = await $fetch('/api/vault/downloadAll', {
@@ -219,20 +224,113 @@ async function downloadAll() {
         cryptoKeyObj,
         ciphertext
       )
-      plainText = new TextDecoder().decode(decryptedData)
+      decryptedContent = decryptedData
+      const plainText = new TextDecoder().decode(decryptedData)
       console.log('decrypted data = \n', plainText)
       console.log('')
     } catch (error) {
       console.error('error during content decryption: ', error)
     }
 
-    decryptedFiles.push({ fileName: originalFilename, fileContent: plainText })
+    decryptedFiles.push({
+      fileName: originalFilename,
+      fileContent: decryptedContent,
+    })
   }
 }
 
+async function deriveKeyFromPassword(password) {
+  const salt = new Uint8Array([1, 2, 3, 4])
+  console.log('Deriviing = ', password)
+  const encoder = new TextEncoder()
+  const encodedPassword = encoder.encode(password)
+  console.log('successful encoding = ', encodedPassword)
+
+  // Import key here is used to set the "structure" of the key
+  const derivedKey = await crypto.subtle.importKey(
+    'raw',
+    encodedPassword,
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey']
+  )
+  const key = await crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 110000,
+      hash: 'SHA-256',
+    },
+    derivedKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  )
+
+  console.log('key derived successfully!')
+  return key
+}
+
 async function uploadAll() {
+  console.log('RE-ENCRYPTING FILES... ')
   for (let i = 0; i < decryptedFiles.length; i++) {
-    console.log(decryptedFiles[i].fileName)
+    const decryptedBlob = new Blob([decryptedFiles[i].fileContent], {
+      type: 'text/plain',
+    })
+    const decryptedFile = new File(
+      [decryptedBlob],
+      decryptedFiles[i].fileName,
+      {
+        type: 'text/plain',
+      }
+    )
+    const decryptedFileBuffer = await decryptedFile.arrayBuffer()
+    const contentiv = crypto.getRandomValues(new Uint8Array(12))
+
+    // encrypt data using new derived key
+    const encryptedContent = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: contentiv },
+      newKey.value,
+      decryptedFileBuffer
+    )
+
+    // encrypt filename using new derived key
+    const fileNameBuffer = new TextEncoder().encode(decryptedFiles[i].fileName)
+    const fileNameiv = crypto.getRandomValues(new Uint8Array(12))
+    const encryptedFilename = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: fileNameiv },
+      newKey.value,
+      fileNameBuffer
+    )
+
+    const filenameArray = new Uint8Array(encryptedFilename)
+    const encryptedFilenameB64 = toBase64Url(filenameArray)
+    const fileNameivB64 = toBase64Url(fileNameiv)
+
+    const newFileName = fileNameivB64 + encryptedFilenameB64 + '.bin'
+
+    reencryptedFiles.push({
+      fileNameIndex: i,
+      fileName: newFileName,
+      fileContentiv: contentiv,
+      fileContent: encryptedContent,
+    })
   }
+
+  console.log('Re-encryption of all current uploaded files done.')
+  console.log('Re-encrypted files = ', reencryptedFiles.length)
+}
+
+function toBase64Url(byteArray) {
+  // Convert byteArray to a standard base64 string
+  const base64String = window.btoa(String.fromCharCode.apply(null, byteArray))
+
+  // Make the base64 string URL and filename safe
+  const base64UrlString = base64String
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
+
+  return base64UrlString
 }
 </script>
