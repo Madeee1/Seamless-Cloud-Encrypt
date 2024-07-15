@@ -117,6 +117,7 @@ async function confirmUpdate() {
       await decryptAll()
 
       // 3. Derive a new key from the new password
+      console.log('Deriving Key...')
       newKey.value = await deriveKeyFromPassword(newPassword.value)
 
       // 4. Re-encrypt all the decrypted files using the new key
@@ -136,7 +137,7 @@ async function confirmUpdate() {
       await updatePassword()
     } else {
       alert('New password confirmation failed.')
-      console.log('salah ajg')
+      console.log('New password does not match with the confirmation.')
     }
   } catch (error) {
     if (!error.response) {
@@ -166,8 +167,9 @@ async function updatePassword() {
   if (error) {
     console.error(error)
   } else {
+    console.log('Vault password updated successfully.\n ')
+    alert('Vault password update successfull, vault will be locked now.')
     navigateTo('/dashboard')
-    alert('Vault password updated successfully.')
   }
 }
 
@@ -186,7 +188,7 @@ async function downloadAll() {
 
   downloadedFiles.value = response.files
 
-  console.log('All files downloaded successfully.\n')
+  console.log('All files downloaded successfully.\n ')
 }
 
 async function decryptAll() {
@@ -233,7 +235,7 @@ async function decryptAll() {
 
     const decryptedFilesResults = await Promise.all(decryptionTasks)
     decryptedFiles.value = decryptedFilesResults.filter((file) => file !== null)
-    console.log('All files decrypted successfully.\n')
+    console.log('All files decrypted successfully.\n ')
   } catch (error) {
     throw new Error('Error during files decryption: ', error)
   }
@@ -241,23 +243,19 @@ async function decryptAll() {
 
 async function deleteAll() {
   // Delete all current files in the one drive folder
-  // Might need to move to backend
-  const deletePromises = downloadedFiles.value.map((file) => {
-    const deleteUrl = `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${file.name}`
-    return fetch(deleteUrl, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }).then((response) => {
-      if (!response.ok) {
-        throw new Error(`Failed to delete ${file.name}: ${response.statusText}`)
-      }
-    })
+  const response = await $fetch('/api/vault/deleteAll', {
+    method: 'POST',
+    body: {
+      accessToken: accessToken,
+      downloadedFiles: downloadedFiles.value,
+    },
   })
 
-  await Promise.all(deletePromises)
-  console.log('All files deleted successfully.\n')
+  if (!response.ok) {
+    throw new Error(`Failed to delete ${file.name}: ${response.statusText}`)
+  }
+
+  console.log('All files deleted successfully.\n ')
 }
 
 async function deriveKeyFromPassword(password) {
@@ -286,7 +284,7 @@ async function deriveKeyFromPassword(password) {
     ['encrypt', 'decrypt']
   )
 
-  console.log('Key derived successfully.\n')
+  console.log('Key derived successfully.\n ')
   return key
 }
 
@@ -345,7 +343,7 @@ async function reencryptAll() {
       (file) => file !== null
     )
 
-    console.log('All files re-encrypted successfully.\n')
+    console.log('All files re-encrypted successfully.\n ')
   } catch (error) {
     throw new Error('Error during files encryption: ', error)
   }
@@ -373,7 +371,7 @@ async function uploadAll() {
       )
     }
 
-    console.log('All files uploaded successfully.\n')
+    console.log('All files uploaded successfully.\n ')
   } catch (err) {
     console.error('Error details:', err)
   }
