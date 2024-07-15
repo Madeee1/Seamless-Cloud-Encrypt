@@ -24,15 +24,7 @@ export default defineEventHandler(async (event) => {
   const { accessToken, files } = await readBody(event)
   const apikey = process.env.CLIENT_SECRET
 
-  // const fileNameivBuffer = base64ToArrayBuffer(fileNameiv)
-  console.log('files received, length = ', files.length)
-  console.log('access token = ', accessToken)
-
   for (const file of files) {
-    // console.log('File name = ', file.fileName)
-    // console.log('File iv = ', file.fileContentiv)
-    // console.log('File content = ', file.fileContent)
-
     const fileContentivBuffer = base64ToArrayBuffer(file.fileContentiv)
     const fileContentBuffer = base64ToArrayBuffer(file.fileContent)
 
@@ -69,8 +61,6 @@ export default defineEventHandler(async (event) => {
         `Failed to upload file: ${response.statusText} - ${errorText}`
       )
     }
-
-    console.log('done uploading file: ', file.fileName)
   }
 
   return { ok: true }

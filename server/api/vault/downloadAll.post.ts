@@ -93,8 +93,6 @@ async function downloadFilesInFolder(accessToken: string, folderId: string) {
     }
   }
 
-  console.log('number of downloaded files = ', folderData.value.length)
-  console.log('type = ', typeof folderData.value)
   return downloadedFiles
 }
 
@@ -115,8 +113,6 @@ export default defineEventHandler(async (event) => {
 
     const folderId = await getFolderIdByName(accessToken, folderName)
     const downloadedFiles = await downloadFilesInFolder(accessToken, folderId)
-
-    console.log('files length = ', downloadedFiles.length)
 
     return {
       ok: true,
