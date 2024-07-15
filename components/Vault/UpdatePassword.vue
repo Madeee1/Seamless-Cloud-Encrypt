@@ -119,11 +119,6 @@ async function confirmUpdate() {
       // 3. Derive a new key from the new password
       newKey.value = await deriveKeyFromPassword(newPassword.value)
 
-      // Debug log
-      for (let i = 0; i < decryptedFiles.value.length; i++) {
-        console.log('Filename = ', decryptedFiles.value[i].fileName)
-      }
-
       // 4. Re-encrypt all the decrypted files using the new key
       console.log('Re-encrypting Files... ')
       await reencryptAll()
@@ -185,70 +180,68 @@ async function downloadAll() {
     },
   })
 
+  if (!response.ok) {
+    throw new Error(`Failed to list files: ${response.statusText}`)
+  }
+
   downloadedFiles.value = response.files
 
-  console.log('All files downloaded successfully.')
+  console.log('All files downloaded successfully.\n')
 }
 
 async function decryptAll() {
-  for (let i = 0; i < downloadedFiles.value.length; i++) {
-    // decrypt filename
-    const encryptedFilenameB64 = downloadedFiles.value[i].name.replace(
-      /\.bin$/,
-      ''
-    )
-    const encFNameUInt8Array = fromBase64Url(encryptedFilenameB64)
-    const encryptedFilename = encFNameUInt8Array.buffer
+  try {
+    const decryptionTasks = downloadedFiles.value.map(async (file) => {
+      // decrypt filename
+      const encryptedFilenameB64 = file.name.replace(/\.bin$/, '')
+      const encFNameUInt8Array = fromBase64Url(encryptedFilenameB64)
+      const encryptedFilename = encFNameUInt8Array.buffer
 
-    const fileNameiv = encryptedFilename.slice(0, 12)
-    const encryptedFilenameOnly = encryptedFilename.slice(12)
+      const fileNameiv = encryptedFilename.slice(0, 12)
+      const encryptedFilenameOnly = encryptedFilename.slice(12)
 
-    try {
       const decryptedFilename = await crypto.subtle.decrypt(
         { name: 'AES-GCM', iv: fileNameiv },
         cryptoKeyObj,
         encryptedFilenameOnly
       )
-      decryptedFiles.value.push({
-        fileName: new TextDecoder().decode(decryptedFilename),
-      })
-    } catch (error) {
-      console.error('error during filename decryption: ', error)
-    }
 
-    //decrypt file content
-    const fileContentBuffer = base64ToArrayBuffer(
-      downloadedFiles.value[i].content
-    )
+      // decrypt file content
+      const fileContentBuffer = base64ToArrayBuffer(file.content)
+      const separatorIndex = new Uint8Array(fileContentBuffer).indexOf(
+        '\n'.charCodeAt(0)
+      )
 
-    const separatorIndex = new Uint8Array(fileContentBuffer).indexOf(
-      '\n'.charCodeAt(0)
-    )
+      const ivBuffer = fileContentBuffer.slice(
+        separatorIndex + 1,
+        separatorIndex + 13
+      )
+      const iv = new Uint8Array(ivBuffer)
+      const ciphertext = fileContentBuffer.slice(separatorIndex + 13)
 
-    const ivBuffer = fileContentBuffer.slice(
-      separatorIndex + 1,
-      separatorIndex + 13
-    )
-    const iv = new Uint8Array(ivBuffer)
-    const ciphertext = fileContentBuffer.slice(separatorIndex + 13)
-
-    try {
       const decryptedData = await crypto.subtle.decrypt(
         { name: 'AES-GCM', iv: iv },
         cryptoKeyObj,
         ciphertext
       )
-      decryptedFiles.value[i].fileContent = decryptedData
-    } catch (error) {
-      console.error('error during content decryption: ', error)
-    }
-  }
 
-  console.log('All files decrypted successfully.')
+      return {
+        fileName: new TextDecoder().decode(decryptedFilename),
+        fileContent: decryptedData,
+      }
+    })
+
+    const decryptedFilesResults = await Promise.all(decryptionTasks)
+    decryptedFiles.value = decryptedFilesResults.filter((file) => file !== null)
+    console.log('All files decrypted successfully.\n')
+  } catch (error) {
+    throw new Error('Error during files decryption: ', error)
+  }
 }
 
 async function deleteAll() {
-  // delete all current files in the one drive folder
+  // Delete all current files in the one drive folder
+  // Might need to move to backend
   const deletePromises = downloadedFiles.value.map((file) => {
     const deleteUrl = `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${file.name}`
     return fetch(deleteUrl, {
@@ -264,7 +257,7 @@ async function deleteAll() {
   })
 
   await Promise.all(deletePromises)
-  console.log('All files deleted successfully.')
+  console.log('All files deleted successfully.\n')
 }
 
 async function deriveKeyFromPassword(password) {
@@ -293,61 +286,69 @@ async function deriveKeyFromPassword(password) {
     ['encrypt', 'decrypt']
   )
 
-  console.log('Key derived successfully.')
+  console.log('Key derived successfully.\n')
   return key
 }
 
 async function reencryptAll() {
-  const i = 0
+  // Re-encrypt all downloaded files with the new derived key
+  try {
+    // File index to be deprecated
+    // Added to prevent error during decryption process
+    let i = 0
 
-  const encryptionTasks = decryptedFiles.value.map(async (file) => {
-    const decryptedBlob = new Blob([file.fileContent], {
-      type: 'text/plain',
-    })
-    const decryptedFile = new File([decryptedBlob], file.fileName, {
-      type: 'text/plain',
-    })
-    const decryptedFileBuffer = await decryptedFile.arrayBuffer()
-    const contentiv = crypto.getRandomValues(new Uint8Array(12))
+    const encryptionTasks = decryptedFiles.value.map(async (file) => {
+      const decryptedBlob = new Blob([file.fileContent], {
+        type: 'text/plain',
+      })
+      const decryptedFile = new File([decryptedBlob], file.fileName, {
+        type: 'text/plain',
+      })
+      const decryptedFileBuffer = await decryptedFile.arrayBuffer()
+      const contentiv = crypto.getRandomValues(new Uint8Array(12))
 
-    // encrypt data using new derived key
-    const encryptedContent = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv: contentiv },
-      newKey.value,
-      decryptedFileBuffer
+      // encrypt data using new derived key
+      const encryptedContent = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: contentiv },
+        newKey.value,
+        decryptedFileBuffer
+      )
+
+      // encrypt filename using new derived key
+      const fileNameBuffer = new TextEncoder().encode(file.fileName)
+      const fileNameiv = crypto.getRandomValues(new Uint8Array(12))
+      const encryptedFilename = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: fileNameiv },
+        newKey.value,
+        fileNameBuffer
+      )
+
+      const filenameArray = new Uint8Array(encryptedFilename)
+      const encryptedFilenameB64 = toBase64Url(filenameArray)
+      const fileNameivB64 = toBase64Url(fileNameiv)
+
+      const newFileName = fileNameivB64 + encryptedFilenameB64 + '.bin'
+      const fileContentivB64 = arrayBufferToBase64(contentiv)
+      const fileContentB64 = arrayBufferToBase64(encryptedContent)
+
+      i++
+      return {
+        fileNameIndex: i,
+        fileName: newFileName,
+        fileContentiv: fileContentivB64,
+        fileContent: fileContentB64,
+      }
+    })
+
+    const reencryptedFilesResults = await Promise.all(encryptionTasks)
+    reencryptedFiles.value = reencryptedFilesResults.filter(
+      (file) => file !== null
     )
 
-    // encrypt filename using new derived key
-    const fileNameBuffer = new TextEncoder().encode(file.fileName)
-    const fileNameiv = crypto.getRandomValues(new Uint8Array(12))
-    const encryptedFilename = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv: fileNameiv },
-      newKey.value,
-      fileNameBuffer
-    )
-
-    const filenameArray = new Uint8Array(encryptedFilename)
-    const encryptedFilenameB64 = toBase64Url(filenameArray)
-    const fileNameivB64 = toBase64Url(fileNameiv)
-
-    const newFileName = fileNameivB64 + encryptedFilenameB64 + '.bin'
-    const fileContentivB64 = arrayBufferToBase64(contentiv)
-    const fileContentB64 = arrayBufferToBase64(encryptedContent)
-
-    return {
-      fileNameIndex: i,
-      fileName: newFileName,
-      fileContentiv: fileContentivB64,
-      fileContent: fileContentB64,
-    }
-  })
-
-  const reencryptedFilesResults = await Promise.all(encryptionTasks)
-  reencryptedFiles.value = reencryptedFilesResults.filter(
-    (file) => file !== null
-  )
-
-  console.log('All files re-encrypted successfully.')
+    console.log('All files re-encrypted successfully.\n')
+  } catch (error) {
+    throw new Error('Error during files encryption: ', error)
+  }
 }
 
 async function uploadAll() {
@@ -372,7 +373,7 @@ async function uploadAll() {
       )
     }
 
-    console.log('All files uploaded successfully.')
+    console.log('All files uploaded successfully.\n')
   } catch (err) {
     console.error('Error details:', err)
   }
