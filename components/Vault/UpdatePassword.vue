@@ -119,6 +119,11 @@ async function confirmUpdate() {
       // 3. Derive a new key from the new password
       newKey.value = await deriveKeyFromPassword(newPassword.value)
 
+      // Debug log
+      for (let i = 0; i < decryptedFiles.value.length; i++) {
+        console.log('Filename = ', decryptedFiles.value[i].fileName)
+      }
+
       // 4. Re-encrypt all the decrypted files using the new key
       console.log('Re-encrypting Files... ')
       await reencryptAll()
@@ -150,6 +155,7 @@ async function confirmUpdate() {
 }
 
 async function updatePassword() {
+  // Update supabase hashed password
   const saltRounds = 10
   const hashPass = await bcrypt.hash(newPassword.value, saltRounds)
 
@@ -171,6 +177,7 @@ async function updatePassword() {
 }
 
 async function downloadAll() {
+  // Download all current uploaded files from onedrive
   const response = await $fetch('/api/vault/downloadAll', {
     method: 'POST',
     body: {
@@ -184,13 +191,12 @@ async function downloadAll() {
 }
 
 async function decryptAll() {
-  let originalFilename = ''
-  let decryptedContent = ''
-  let i = 0
-
-  const decryptionTasks = downloadedFiles.value.map(async (file) => {
+  for (let i = 0; i < downloadedFiles.value.length; i++) {
     // decrypt filename
-    const encryptedFilenameB64 = file.name.replace(/\.bin$/, '')
+    const encryptedFilenameB64 = downloadedFiles.value[i].name.replace(
+      /\.bin$/,
+      ''
+    )
     const encFNameUInt8Array = fromBase64Url(encryptedFilenameB64)
     const encryptedFilename = encFNameUInt8Array.buffer
 
@@ -203,13 +209,17 @@ async function decryptAll() {
         cryptoKeyObj,
         encryptedFilenameOnly
       )
-      originalFilename = new TextDecoder().decode(decryptedFilename)
+      decryptedFiles.value.push({
+        fileName: new TextDecoder().decode(decryptedFilename),
+      })
     } catch (error) {
       console.error('error during filename decryption: ', error)
     }
 
     //decrypt file content
-    const fileContentBuffer = base64ToArrayBuffer(file.content)
+    const fileContentBuffer = base64ToArrayBuffer(
+      downloadedFiles.value[i].content
+    )
 
     const separatorIndex = new Uint8Array(fileContentBuffer).indexOf(
       '\n'.charCodeAt(0)
@@ -228,24 +238,11 @@ async function decryptAll() {
         cryptoKeyObj,
         ciphertext
       )
-      decryptedContent = decryptedData
+      decryptedFiles.value[i].fileContent = decryptedData
     } catch (error) {
       console.error('error during content decryption: ', error)
     }
-
-    // decryptedFiles.push({
-    //   fileName: originalFilename,
-    //   fileContent: decryptedContent,
-    // })
-    i++
-    return {
-      fileName: originalFilename,
-      fileContent: decryptedContent,
-    }
-  })
-
-  const decryptedFilesResults = await Promise.all(decryptionTasks)
-  decryptedFiles.value = decryptedFilesResults.filter((file) => file !== null)
+  }
 
   console.log('All files decrypted successfully.')
 }
@@ -337,13 +334,6 @@ async function reencryptAll() {
     const fileContentivB64 = arrayBufferToBase64(contentiv)
     const fileContentB64 = arrayBufferToBase64(encryptedContent)
 
-    // reencryptedFiles.push({
-    // fileNameIndex: i,
-    // fileName: newFileName,
-    // fileContentiv: fileContentivB64,
-    // fileContent: fileContentB64,
-    // })
-
     return {
       fileNameIndex: i,
       fileName: newFileName,
@@ -361,6 +351,7 @@ async function reencryptAll() {
 }
 
 async function uploadAll() {
+  // Upload all newly encrypted files to onedrive
   try {
     if (!accessToken) {
       throw new Error('Access token not found')
