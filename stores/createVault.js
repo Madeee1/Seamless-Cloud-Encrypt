@@ -10,6 +10,7 @@ export const useCreateVaultStore = defineStore({
     cloudFolderName: '',
     password: '',
     key: CryptoKey | undefined,
+    tokenExpiresIn: '',
   }),
   actions: {},
   persist: {
