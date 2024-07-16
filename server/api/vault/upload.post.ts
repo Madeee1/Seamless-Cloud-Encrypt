@@ -1,15 +1,5 @@
 import { serverSupabaseUser } from '#supabase/server'
 
-function base64ToArrayBuffer(base64: any) {
-  const binaryString = atob(base64)
-  const len = binaryString.length
-  const bytes = new Uint8Array(len)
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i)
-  }
-  return bytes.buffer
-}
-
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
 
@@ -21,36 +11,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const {
-    // fileNameIndex,
-    // // fileNameiv,
-    fileName,
-    // fileContentiv,
-    accessToken,
-    // // apikey,
-    // fileContent,
-  } = await readBody(event)
+  const { fileName, accessToken } = await readBody(event)
 
-  // const fileNameivBuffer = base64ToArrayBuffer(fileNameiv)
-  // const fileContentivBuffer = base64ToArrayBuffer(fileContentiv)
-  // const fileContentBuffer = base64ToArrayBuffer(fileContent)
-
-  // const encryptedFile = new File(
-  //   [
-  //     fileNameIndex,
-  //     '\n',
-  //     // fileNameivBuffer,
-  //     fileContentivBuffer,
-  //     fileContentBuffer,
-  //   ],
-  //   fileName,
-  //   {
-  //     type: 'application/octet-stream',
-  //   }
-  // )
-
-  const apikey = process.env.CLIENT_SECRET
-  console.log('Calling Backend')
+  // API key not used
 
   const response = await fetch(
     `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${fileName}:/createUploadSession`,
@@ -78,9 +41,6 @@ export default defineEventHandler(async (event) => {
 
   const data = await response.json()
   const uploadUrl = data.uploadUrl
-  console.log('Signed url for: ', fileName)
-  console.log('')
-  console.log(uploadUrl)
 
   return { uploadUrl }
 })

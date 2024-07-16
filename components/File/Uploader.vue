@@ -128,7 +128,6 @@ export default {
 
         const fileInfo = {
           fileNameIndex: i,
-          // fileNameiv: filenameiv,
           fileName: `${fileNameivBase64}${newFilename}`,
           fileContentiv: iv,
           fileContent: encryptedData,
@@ -148,28 +147,15 @@ export default {
           throw new Error('Access token not found')
         }
 
-        const fileContentBase64 = this.arrayBufferToBase64(file.fileContent)
-        const fileContentivBase64 = this.arrayBufferToBase64(file.fileContentiv)
-
         const response = await $fetch('/api/vault/upload', {
           method: 'POST',
           body: {
-            // fileNameIndex: file.fileNameIndex,
             fileName: file.fileName,
-            // fileContentiv: fileContentivBase64,
             accessToken: this.accessToken,
-            // fileContent: fileContentBase64,
           },
         })
 
-        console.log('Response url')
-        // const uploadUrl = await response.json()
         const uploadUrl = response.uploadUrl
-        console.log(uploadUrl)
-        // console.log(uploadUrl)
-        // if (!uploadUrl) {
-        //   throw new Error(`Failed to upload file: error uploading file.`)
-        // }
 
         const fileToUpload = new File(
           [file.fileNameIndex, '\n', file.fileContentiv, file.fileContent],
@@ -179,7 +165,7 @@ export default {
           }
         )
 
-        // Upload the file to OneDrive using the upload session URL
+        // Upload the file to OneDrive using the upload session URL in chunks
         const chunkSize = 1024 * 1024 // 1 MB per chunk
         let start = 0
 
