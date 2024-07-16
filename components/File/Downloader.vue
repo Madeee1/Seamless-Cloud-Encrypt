@@ -151,6 +151,7 @@ export default {
         )
         originalFilename = new TextDecoder().decode(decryptedFilename)
         this.originalFilename.push(originalFilename)
+        console.log('originalFilename = ', originalFilename)
       } catch (error) {
         console.error('error during filename decryption: ', error)
       }
@@ -162,6 +163,10 @@ export default {
           { name: 'AES-GCM', iv: iv },
           cryptoKeyObj,
           ciphertext
+        )
+        console.log(
+          'decrypted data = ',
+          new TextDecoder().decode(decryptedData)
         )
         decryptedBlob = new Blob([decryptedData], {
           type: 'text/plain',
