@@ -4,4 +4,5 @@ export default defineNuxtRouteMiddleware((to, from) => {
   if (!vault.isOpen) {
     return navigateTo('/dashboard')
   }
+  setPageLayout('vault')
 })

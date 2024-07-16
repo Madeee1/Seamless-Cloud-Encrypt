@@ -2,6 +2,7 @@
   <div class="flex flex-col gap-8">
     <FileUploader />
     <FileDownloader />
+    <VaultAutoLock />
   </div>
 </template>
 
@@ -9,7 +10,7 @@
 definePageMeta({
   title: 'Vault',
   description: 'Vault',
-  layout: 'vault',
+  // layout: 'vault',
   middleware: 'vault-auth',
 })
 </script>
