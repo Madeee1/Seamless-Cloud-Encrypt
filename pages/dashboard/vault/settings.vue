@@ -2,6 +2,8 @@
   <div class="flex flex-col gap-8">
     <VaultUpdate />
     <VaultDelete />
+    <VaultManage />
+    <VaultAutoLock />
   </div>
 </template>
 
