@@ -22,45 +22,50 @@ export default defineEventHandler(async (event) => {
   }
 
   const {
-    fileNameIndex,
-    // fileNameiv,
+    // fileNameIndex,
+    // // fileNameiv,
     fileName,
-    fileContentiv,
+    // fileContentiv,
     accessToken,
-    // apikey,
-    fileContent,
+    // // apikey,
+    // fileContent,
   } = await readBody(event)
 
   // const fileNameivBuffer = base64ToArrayBuffer(fileNameiv)
-  const fileContentivBuffer = base64ToArrayBuffer(fileContentiv)
-  const fileContentBuffer = base64ToArrayBuffer(fileContent)
+  // const fileContentivBuffer = base64ToArrayBuffer(fileContentiv)
+  // const fileContentBuffer = base64ToArrayBuffer(fileContent)
 
-  const encryptedFile = new File(
-    [
-      fileNameIndex,
-      '\n',
-      // fileNameivBuffer,
-      fileContentivBuffer,
-      fileContentBuffer,
-    ],
-    fileName,
-    {
-      type: 'application/octet-stream',
-    }
-  )
+  // const encryptedFile = new File(
+  //   [
+  //     fileNameIndex,
+  //     '\n',
+  //     // fileNameivBuffer,
+  //     fileContentivBuffer,
+  //     fileContentBuffer,
+  //   ],
+  //   fileName,
+  //   {
+  //     type: 'application/octet-stream',
+  //   }
+  // )
 
   const apikey = process.env.CLIENT_SECRET
+  console.log('Calling Backend')
 
   const response = await fetch(
-    `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${fileName}:/content`,
+    `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${fileName}:/createUploadSession`,
     {
-      method: 'PUT',
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        'Content-Type': encryptedFile.type,
-        apikey: apikey || '',
+        'Content-Type': 'application/json',
       },
-      body: encryptedFile,
+      body: JSON.stringify({
+        item: {
+          '@microsoft.graph.conflictBehavior': 'rename',
+          name: fileName,
+        },
+      }),
     }
   )
 
@@ -71,5 +76,11 @@ export default defineEventHandler(async (event) => {
     )
   }
 
-  return { ok: true }
+  const data = await response.json()
+  const uploadUrl = data.uploadUrl
+  console.log('Signed url for: ', fileName)
+  console.log('')
+  console.log(uploadUrl)
+
+  return { uploadUrl }
 })

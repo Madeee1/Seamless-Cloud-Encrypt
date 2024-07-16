@@ -154,19 +154,56 @@ export default {
         const response = await $fetch('/api/vault/upload', {
           method: 'POST',
           body: {
-            fileNameIndex: file.fileNameIndex,
+            // fileNameIndex: file.fileNameIndex,
             fileName: file.fileName,
-            fileContentiv: fileContentivBase64,
+            // fileContentiv: fileContentivBase64,
             accessToken: this.accessToken,
-            fileContent: fileContentBase64,
+            // fileContent: fileContentBase64,
           },
         })
 
-        if (!response.ok) {
-          const errorText = await response.text()
-          throw new Error(
-            `Failed to upload file: ${response.statusText} - ${errorText}`
-          )
+        console.log('Response url')
+        // const uploadUrl = await response.json()
+        const uploadUrl = response.uploadUrl
+        console.log(uploadUrl)
+        // console.log(uploadUrl)
+        // if (!uploadUrl) {
+        //   throw new Error(`Failed to upload file: error uploading file.`)
+        // }
+
+        const fileToUpload = new File(
+          [file.fileNameIndex, '\n', file.fileContentiv, file.fileContent],
+          file.fileName,
+          {
+            type: 'application/octet-stream',
+          }
+        )
+
+        // Upload the file to OneDrive using the upload session URL
+        const chunkSize = 1024 * 1024 // 1 MB per chunk
+        let start = 0
+
+        while (start < fileToUpload.size) {
+          console.log('Uploading chunk')
+          const end = Math.min(start + chunkSize, fileToUpload.size)
+          const chunk = fileToUpload.slice(start, end)
+
+          const uploadResponse = await fetch(uploadUrl, {
+            method: 'PUT',
+            headers: {
+              'Content-Range': `bytes ${start}-${end - 1}/${fileToUpload.size}`,
+            },
+            body: chunk,
+          })
+
+          if (!uploadResponse.ok && uploadResponse.status !== 308) {
+            const errorText = await uploadResponse.text()
+            throw new Error(
+              `Failed to upload file: ${uploadResponse.status} - ${errorText}`
+            )
+          }
+
+          start = end
         }
 
         this.uploadSuccess = true
