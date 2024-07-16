@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
   const { data: vaultData, error: vaultError } = await supabase
     .from('vault')
     .select(
-      'id, name, description, cloud_folder_name, created_at, enc_cloud_access_token, enc_cloud_refresh_token, cloud_provider, idle_time'
+      'id, name, description, cloud_folder_name, created_at, enc_cloud_access_token, enc_cloud_refresh_token, cloud_provider, idle_time, token_expires_in'
     )
     .eq('user_id', user.id)
     .eq('id', vaultId)

@@ -11,6 +11,9 @@ const user = useSupabaseUser()
 const intervalId = ref('')
 
 onMounted(() => {
+  if (vault.tokenExpiresIn) {
+    checkTokenRefresh()
+  }
   intervalId.value = setInterval(() => {
     if (vault.tokenExpiresIn) {
       checkTokenRefresh()
@@ -24,6 +27,7 @@ onBeforeUnmount(() => {
 
 async function refreshAccessToken() {
   try {
+    console.log('refreshing access token')
     const clientID = import.meta.env.VITE_CLIENT_ID
     const redirectUri = import.meta.env.VITE_OD_REDIRECT_URI
     const tenantID = 'common'
@@ -53,8 +57,6 @@ async function refreshAccessToken() {
     vault.cloudAccessToken = tokenData.access_token
     vault.cloudRefreshToken = tokenData.refresh_token // refresh token if new one is provided
     vault.tokenExpiresIn = Date.now() + tokenData.expires_in * 1000
-
-    window.history.replaceState({}, document.title, '/') // clean URL
   } catch (err) {
     throw new Error(`Error refreshing access token: ${err.message}`)
   }
