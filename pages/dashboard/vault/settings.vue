@@ -2,6 +2,7 @@
   <div class="flex flex-col gap-8">
     <VaultUpdate />
     <VaultDelete />
+    <VaultUpdatePassword />
     <VaultManage />
     <VaultAutoLock />
   </div>
