@@ -64,7 +64,6 @@ export default {
       decryptedFileURL: [],
       originalFilename: [],
       // from download.vue
-      accessToken: sessionStorage.getItem('access_token') || null,
       files: [],
       error: null,
       password: null,
@@ -72,19 +71,17 @@ export default {
       confirmPassword: false,
     }
   },
+  computed: {
+    accessToken() {
+      const vaultStore = useVaultStore()
+      return vaultStore.accessToken
+    },
+  },
   methods: {
-    // downloadFile() {
-    //   const a = document.createElement('a')
-    //   a.href = this.decryptedFileURL
-    //   a.download = this.originalFilename
-    //   document.body.appendChild(a)
-    //   a.click()
-    // },
     handleDownload(fileId) {
       this.confirmPassword = true
       this.selectedFileid = fileId
     },
-
     async previewFilename(filename) {
       const vaultStore = useVaultStore()
       const cryptoKeyObj = vaultStore.key
@@ -206,35 +203,6 @@ export default {
 
           this.files[i].oriFilename = oriFilename
         }
-
-        // TODO: IMPLEMENT
-        // Fetch thumbnails of each file
-        // for (const file of this.files) {
-        //   if (file.file) {
-        //     const thumbnailResponse = await fetch(
-        //       `https://graph.microsoft.com/v1.0/me/drive/items/${file.id}/thumbnails`,
-        //       {
-        //         method: 'GET',
-        //         headers: {
-        //           Authorization: `Bearer ${this.accessToken}`,
-        //           'Content-Type': 'application/json',
-        //         },
-        //       }
-        //     )
-
-        //     if (thumbnailResponse.ok) {
-        //       const thumbnailData = await thumbnailResponse.json()
-        //       if (thumbnailData.value && thumbnailData.value.length > 0) {
-        //         file.thumbnailUrl = thumbnailData.value[0].medium.url // medium size thumbnail
-        //       } else {
-        //         console.error(
-        //           'Failed to fetch thumbnail:',
-        //           thumbnailResponse.statusText
-        //         )
-        //       }
-        //     }
-        //   }
-        // }
       } catch (err) {
         this.error = `Error listing files: ${err.message}`
         console.error('Error details:', err)

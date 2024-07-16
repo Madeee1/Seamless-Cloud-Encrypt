@@ -51,10 +51,15 @@ export default {
       keyPass: '',
       newFilename: [],
       // FROM upload.vue
-      accessToken: sessionStorage.getItem('access_token') || null,
       error: null, // init 2 null
       uploadSuccess: false,
     }
+  },
+  computed: {
+    accessToken() {
+      const vaultStore = useVaultStore()
+      return vaultStore.accessToken
+    },
   },
   methods: {
     async handleFileUpload() {
