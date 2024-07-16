@@ -2,7 +2,8 @@
   <div class="flex flex-col gap-8">
     <FileUploader />
     <FileDownloader />
-    <VaultAutoLock />
+    <TimerAutoLock />
+    <TimerRefreshToken />
   </div>
 </template>
 
