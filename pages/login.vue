@@ -1,46 +1,55 @@
 <template>
-  <div>
-    <UCard class="w-[450px] mx-auto mt-8 rounded-2xl">
-      <template #header>
-        <!-- Use Tab to see whether user Signs up or Login -->
-        <UTabs v-model="selectedTab" :items="items" />
-      </template>
-      <UForm
-        :schema="schema"
-        :state="state"
-        class="space-y-4"
-        @submit="onSubmit"
-      >
-        <UFormGroup label="Email" name="email" class="h-[80px]">
-          <UInput v-model="state.email" placeholder="example@example.com" />
-        </UFormGroup>
+  <div class="flex flex-col min-h-screen bg-main-blue text-gray-200">
+    <div>
+      <UCard class="w-[450px] mx-auto mt-8 rounded-2xl bg-gray-200">
+        <template #header>
+          <!-- Use Tab to see whether user Signs up or Login -->
+          <UTabs v-model="selectedTab" :items="items" />
+        </template>
+        <UForm
+          :schema="schema"
+          :state="state"
+          class="space-y-4"
+          @submit="onSubmit"
+        >
+          <UFormGroup label="Email" name="email" class="h-[80px]">
+            <UInput v-model="state.email" placeholder="example@example.com" />
+          </UFormGroup>
 
-        <UFormGroup label="Password" name="password" class="h-[80px]">
-          <UInput
-            v-model="state.password"
-            type="password"
-            placeholder="StrongP@ssword101"
-          />
-        </UFormGroup>
+          <UFormGroup label="Password" name="password" class="h-[80px]">
+            <UInput
+              v-model="state.password"
+              type="password"
+              placeholder="StrongP@ssword101"
+            />
+          </UFormGroup>
 
-        <div class="text-left mt-2">
-          <a
-            href="/forgot-password"
-            class="text-blue-500 hover: underline"
-            @click.prevent="toForgotPassword"
-          >
-            Forgot Password?
-          </a>
-        </div>
+          <div class="text-left mt-2">
+            <a
+              href="/forgot-password"
+              class="text-blue-500 hover: underline"
+              @click.prevent="toForgotPassword"
+            >
+              Forgot Password?
+            </a>
+          </div>
 
-        <div class="flex">
-          <UButton type="submit"> Submit </UButton>
-          <span class="text-red-500 ml-2 text-sm my-auto">
-            {{ errorMessage }}
-          </span>
-        </div>
-      </UForm>
-    </UCard>
+          <div class="flex">
+            <UButton
+              type="submit"
+              class="flex-1 w-full bg-second-blue hover:shadow-[5px_3px_0px_rgb(255,0,0)] hover:bg-white hover:text-second-blue active:shadow-[5px_3px_0px_rgb(0,4,30)]"
+            >
+              Submit
+            </UButton>
+          </div>
+          <div class="flex">
+            <span class="text-red-500 ml-2 text-sm my-auto">
+              {{ errorMessage }}
+            </span>
+          </div>
+        </UForm>
+      </UCard>
+    </div>
   </div>
 </template>
 
