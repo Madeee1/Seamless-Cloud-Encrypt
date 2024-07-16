@@ -2,7 +2,9 @@
   <div class="flex flex-col gap-8">
     <VaultUpdate />
     <VaultDelete />
-    <Cloud />
+    <VaultUpdatePassword />
+    <VaultManage />
+    <VaultAutoLock />
   </div>
 </template>
 
@@ -10,7 +12,7 @@
 definePageMeta({
   title: 'Vault',
   description: 'Vault settings',
-  layout: 'vault',
+  // layout: 'vault',
   middleware: 'vault-auth',
 })
 </script>

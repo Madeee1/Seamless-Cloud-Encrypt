@@ -1,6 +1,5 @@
 <template>
   <div class="space-y-4">
-    <h1 class="text-3xl font-bold text-gray-800 mb-6">Connect to cloud</h1>
     <UButton
       class="text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
       @click="connectToOneDrive"
@@ -18,6 +17,8 @@
 </template>
 
 <script>
+// COMPONENT TO BE DEPRECATED
+
 import { v4 as uuidv4 } from 'uuid'
 // TODO: Deprecate use of crypto-js in favor of built-in Web Crypto API and btoa()
 import sha256 from 'crypto-js/sha256'
@@ -32,8 +33,6 @@ export default {
       tokenExpiryTime: null,
       error: null,
       connected: false,
-      showUploadC: false,
-      showDownloadC: false,
     }
   },
   mounted() {},
@@ -188,14 +187,6 @@ export default {
           this.refreshAccessToken()
         }
       }, 60 * 1000) // Check every min if token going 2 expire
-    },
-    showUpload() {
-      this.showUploadC = true
-      this.showDownloadC = false
-    },
-    showDownload() {
-      this.showUploadC = false
-      this.showDownloadC = true
     },
   },
 }
