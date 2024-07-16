@@ -74,7 +74,7 @@ export default {
   computed: {
     accessToken() {
       const vaultStore = useVaultStore()
-      return vaultStore.accessToken
+      return vaultStore.cloudAccessToken
     },
   },
   methods: {

@@ -58,7 +58,7 @@ export default {
   computed: {
     accessToken() {
       const vaultStore = useVaultStore()
-      return vaultStore.accessToken
+      return vaultStore.cloudAccessToken
     },
   },
   methods: {
@@ -155,11 +155,9 @@ export default {
           method: 'POST',
           body: {
             fileNameIndex: file.fileNameIndex,
-            // fileNameiv: fileNameivBase64,
             fileName: file.fileName,
             fileContentiv: fileContentivBase64,
             accessToken: this.accessToken,
-            // apikey: import.meta.env.VITE_CLIENT_SECRET,
             fileContent: fileContentBase64,
           },
         })
