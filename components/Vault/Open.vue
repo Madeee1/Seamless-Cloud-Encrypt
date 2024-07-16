@@ -69,6 +69,7 @@ async function openVault() {
         cloudRefreshToken: refreshToken,
         id: response.data.id,
         isOpen: true,
+        tokenExpiresIn: response.data.token_expires_in,
       })
       navigateTo('/dashboard/vault')
     }
