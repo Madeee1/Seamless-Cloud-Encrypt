@@ -27,16 +27,6 @@
     >
       File uploaded successfully!
     </div>
-    <!-- DEPRECATE
-    <div v-for="(file, index) in newFilename" :key="index" class="pt-2">
-      <a
-        :href="encryptedFileURL[index]"
-        :download="file"
-        class="text-blue-500 hover:text-blue-800"
-        >Download -> {{ file }}</a
-      >
-    </div>
-      -->
   </div>
 </template>
 
@@ -68,139 +58,130 @@ export default {
 
       const encoder = new TextEncoder()
 
-      for (let i = 0; i < this.files.length; i++) {
-        // derive key from password
-        const cryptoKeyObj = vaultStore.key
-
-        // convert file to arraybuffer
-        const file = this.files[i]
-        const fileAB = await file.arrayBuffer()
-
-        // generate iv
-        const iv = crypto.getRandomValues(new Uint8Array(12))
-
-        // encrypt data
-        const encryptedData = await crypto.subtle.encrypt(
-          { name: 'AES-GCM', iv },
-          cryptoKeyObj,
-          fileAB
-        )
-
-        // get filename and iv for filename encryption
-        const encodedFilename = encoder.encode(file.name)
-        const filenameiv = crypto.getRandomValues(new Uint8Array(12))
-
-        // encrypt filename
-        const encryptedFilename = await crypto.subtle.encrypt(
-          { name: 'AES-GCM', iv: filenameiv },
-          cryptoKeyObj,
-          encodedFilename
-        )
-
-        // convert encrypted filename to readable string
-        const filenameArray = new Uint8Array(encryptedFilename)
-        // const filenameString = String.fromCharCode.apply(null, filenameArray)
-        const base64Filename = this.toBase64Url(filenameArray)
-        const newFilename = base64Filename + '.bin'
-        this.newFilename.push(newFilename)
-
-        // create blob for file download
-        // concatenate index for pinia filenameArray, newline separator, filenameiv, and iv into encrypted file
-        const encryptedBlob = new Blob(
-          [i, '\n', filenameiv, iv, encryptedData],
-          { type: 'application/octet-stream' }
-        )
-        this.encryptedFileURL.push(URL.createObjectURL(encryptedBlob))
-
-        // Save the file as a File object
-        // const encryptedFile = new File(
-        //   [i, '\n', filenameiv, iv, encryptedData],
-        //   newFilename,
-        //   {
-        //     type: 'application/octet-stream',
-        //   }
-        // )
-        //await this.uploadFile(encryptedFile)
-
-        // file info details for file creation in server
-
-        const fileNameivBase64 = this.toBase64Url(filenameiv)
-
-        const fileInfo = {
-          fileNameIndex: i,
-          fileName: `${fileNameivBase64}${newFilename}`,
-          fileContentiv: iv,
-          fileContent: encryptedData,
-        }
-
-        await this.uploadFile(fileInfo)
-        // await this.uploadFile(encryptedFile)
-      }
-    },
-
-    // TODO: Only created to handle 1 file at a time
-    async uploadFile(file) {
-      console.log('Uploading file:', file.fileName)
-      // upload file to OneDrive using Microsoft Graph API
+      let errorBoolean = false
       try {
-        if (!this.accessToken) {
-          throw new Error('Access token not found')
-        }
+        for (let i = 0; i < this.files.length; i++) {
+          // derive key from password
+          const cryptoKeyObj = vaultStore.key
 
-        const response = await $fetch('/api/vault/upload', {
-          method: 'POST',
-          body: {
-            fileName: file.fileName,
-            accessToken: this.accessToken,
-          },
-        })
+          // convert file to arraybuffer
+          const file = this.files[i]
+          const fileAB = await file.arrayBuffer()
 
-        const uploadUrl = response.uploadUrl
+          // generate iv
+          const iv = crypto.getRandomValues(new Uint8Array(12))
 
-        const fileToUpload = new File(
-          [file.fileNameIndex, '\n', file.fileContentiv, file.fileContent],
-          file.fileName,
-          {
-            type: 'application/octet-stream',
+          // encrypt data
+          const encryptedData = await crypto.subtle.encrypt(
+            { name: 'AES-GCM', iv },
+            cryptoKeyObj,
+            fileAB
+          )
+
+          // get filename and iv for filename encryption
+          const encodedFilename = encoder.encode(file.name)
+          const filenameiv = crypto.getRandomValues(new Uint8Array(12))
+
+          // encrypt filename
+          const encryptedFilename = await crypto.subtle.encrypt(
+            { name: 'AES-GCM', iv: filenameiv },
+            cryptoKeyObj,
+            encodedFilename
+          )
+
+          // convert encrypted filename to readable string
+          const filenameArray = new Uint8Array(encryptedFilename)
+          // const filenameString = String.fromCharCode.apply(null, filenameArray)
+          const base64Filename = this.toBase64Url(filenameArray)
+          const newFilename = base64Filename + '.bin'
+          this.newFilename.push(newFilename)
+
+          // create blob for file download
+          // concatenate index for pinia filenameArray, newline separator, filenameiv, and iv into encrypted file
+          const encryptedBlob = new Blob(
+            [i, '\n', filenameiv, iv, encryptedData],
+            { type: 'application/octet-stream' }
+          )
+          this.encryptedFileURL.push(URL.createObjectURL(encryptedBlob))
+
+          // file info details for file creation in server
+
+          const fileNameivBase64 = this.toBase64Url(filenameiv)
+
+          const fileInfo = {
+            fileNameIndex: i,
+            fileName: `${fileNameivBase64}${newFilename}`,
+            fileContentiv: iv,
+            fileContent: encryptedData,
           }
-        )
 
-        // Upload the file to OneDrive using the upload session URL in chunks
-        const chunkSize = 1024 * 1024 // 1 MB per chunk
-        let start = 0
-
-        while (start < fileToUpload.size) {
-          console.log('Uploading chunk')
-          const end = Math.min(start + chunkSize, fileToUpload.size)
-          const chunk = fileToUpload.slice(start, end)
-
-          const uploadResponse = await fetch(uploadUrl, {
-            method: 'PUT',
-            headers: {
-              'Content-Range': `bytes ${start}-${end - 1}/${fileToUpload.size}`,
-            },
-            body: chunk,
-          })
-
-          if (!uploadResponse.ok && uploadResponse.status !== 308) {
-            const errorText = await uploadResponse.text()
-            throw new Error(
-              `Failed to upload file: ${uploadResponse.status} - ${errorText}`
-            )
-          }
-
-          start = end
+          await this.uploadFile(fileInfo)
         }
+      } catch (err) {
+        // TODO: better errror handling
+        console.error(err)
+        this.error = err.message
+        errorBoolean = true
+      }
 
+      if (!errorBoolean) {
         this.uploadSuccess = true
-
         // timer for how long alert last
         setTimeout(() => {
           this.uploadSuccess = false
         }, 10000)
-      } catch (err) {
-        this.error = `Error uploading file: ${err.message}`
-        console.error('Error details:', err)
+      }
+    },
+    async uploadFile(file) {
+      console.log('Uploading file:', file.fileName)
+      // upload file to OneDrive using Microsoft Graph API
+      if (!this.accessToken) {
+        throw new Error('Access token not found')
+      }
+
+      // TODO: CHANGE TO only 1 fetch for multiple signed urls
+      const response = await $fetch('/api/vault/upload', {
+        method: 'POST',
+        body: {
+          fileName: file.fileName,
+          accessToken: this.accessToken,
+        },
+      })
+
+      const uploadUrl = response.uploadUrl
+
+      const fileToUpload = new File(
+        [file.fileNameIndex, '\n', file.fileContentiv, file.fileContent],
+        file.fileName,
+        {
+          type: 'application/octet-stream',
+        }
+      )
+
+      // Upload the file to OneDrive using the upload session URL in chunks
+      const chunkSize = 1024 * 1024 // 1 MB per chunk
+      let start = 0
+
+      while (start < fileToUpload.size) {
+        const end = Math.min(start + chunkSize, fileToUpload.size)
+        const chunk = fileToUpload.slice(start, end)
+
+        const uploadResponse = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Range': `bytes ${start}-${end - 1}/${fileToUpload.size}`,
+          },
+          body: chunk,
+        })
+
+        if (!uploadResponse.ok && uploadResponse.status !== 308) {
+          const errorText = await uploadResponse.text()
+          throw new Error(
+            `Failed to upload file: ${uploadResponse.status} - ${errorText}`
+          )
+        }
+
+        start = end
       }
     },
 
