@@ -14,7 +14,6 @@ export default defineEventHandler(async (event) => {
   const { accessToken, downloadedFiles } = await readBody(event)
 
   const deletePromises = downloadedFiles.map(async (fileName: any) => {
-    console.log('Deleting = ', fileName)
     return fetch(
       `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${fileName}`,
       {

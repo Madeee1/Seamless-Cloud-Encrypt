@@ -190,7 +190,6 @@ async function downloadAll() {
 
   downloadedFiles.value = response.files
   for (let i = 0; i < downloadedFiles.value.length; i++) {
-    console.log('pushing ', downloadedFiles.value[i].name)
     downloadedFileNames.value.push(downloadedFiles.value[i].name)
   }
 
@@ -370,7 +369,6 @@ async function uploadAll() {
       throw new Error('Access token not found')
     }
 
-    console.log('Calling Backend')
     const response = await $fetch('/api/vault/uploadAll', {
       method: 'POST',
       body: {
@@ -385,12 +383,6 @@ async function uploadAll() {
     //     `Failed to upload file: ${response.statusText} - ${errorText}`
     //   )
     // }
-
-    console.log('Response urls = ')
-    const uploadUrls = response.uploadUrls
-    for (let i = 0; i < uploadUrls.length; i++) {
-      console.log(uploadUrls[i])
-    }
 
     for (let i = 0; i < uploadUrls.length; i++) {
       const fileToUpload = new File(
