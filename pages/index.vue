@@ -1,25 +1,11 @@
 <template>
   <div class="flex flex-col min-h-screen bg-main-blue text-gray-200">
-    <link
-      href="https://fonts.googleapis.com/css2?family=Anton&family=Heebo:wght@100..900&display=swap"
-      rel="stylesheet"
-    />
-    <!--
-    <div class="mb-8">
-      <img src="" alt="Crypt and Go Logo" class="h-16" />
-    </div>
-    -->
     <section class="h-min">
       <h1 class="text-5xl font-extrabold mb-5 mt-20 text-center">
         Welcome to
         <span class="text-third-blue font-title"
           >CRYPT<span class="text-gray-200 text-4xl">&</span>GO</span
         >
-        <!-- for later use
-        <span
-          class="text-transparent text-stroke-white text-stroke-1 font-sans"
-          >and</span
-        -->
       </h1>
       <div
         class="h-16 w-3/4 bg-third-blue rounded-md transform- -skew-x-12 mx-auto shadow-[10px_5px_0px_rgb(255,0,0)]"

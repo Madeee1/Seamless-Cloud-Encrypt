@@ -18,14 +18,11 @@ export default {
       fontFamily: {
         sans: ['Lato', 'sans-serif'],
         title: ['Anton'],
-        title2: ['Montserrat'],
       },
       textStrokeWidth: {
         '1': '0.1px',
       },
       textStrokeColor: {
-        black: '#000',
-        white: '#fff',
         'main-blue': '#00041e',
         'second-blue': '#001FD2',
         'third-blue': '#0FA2FF',
