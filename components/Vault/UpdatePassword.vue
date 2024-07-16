@@ -56,14 +56,16 @@ const vault = useVaultStore()
 
 const cryptoKeyObj = vault.key
 const confirmPassword = ref(false)
-const accessToken = sessionStorage.getItem('access_token') || null
+const accessToken = vault.cloudAccessToken
 const passwordConfirmation = ref('')
 const newPassword = ref('')
 const newPasswordConfirmation = ref('')
 const newKey = ref(null)
 const downloadedFiles = ref(null)
+const downloadedFileNames = ref([])
 const decryptedFiles = ref([])
 const reencryptedFiles = ref([])
+const reencryptedFileNames = ref([])
 
 function base64ToArrayBuffer(base64) {
   const binaryString = atob(base64)
@@ -187,6 +189,10 @@ async function downloadAll() {
   }
 
   downloadedFiles.value = response.files
+  for (let i = 0; i < downloadedFiles.value.length; i++) {
+    console.log('pushing ', downloadedFiles.value[i].name)
+    downloadedFileNames.value.push(downloadedFiles.value[i].name)
+  }
 
   console.log('All files downloaded successfully.\n ')
 }
@@ -247,7 +253,7 @@ async function deleteAll() {
     method: 'POST',
     body: {
       accessToken: accessToken,
-      downloadedFiles: downloadedFiles.value,
+      downloadedFiles: downloadedFileNames.value,
     },
   })
 
@@ -333,8 +339,8 @@ async function reencryptAll() {
       return {
         fileNameIndex: i,
         fileName: newFileName,
-        fileContentiv: fileContentivB64,
-        fileContent: fileContentB64,
+        fileContentiv: contentiv,
+        fileContent: encryptedContent,
       }
     })
 
@@ -342,6 +348,14 @@ async function reencryptAll() {
     reencryptedFiles.value = reencryptedFilesResults.filter(
       (file) => file !== null
     )
+
+    for (let i = 0; i < reencryptedFiles.value.length; i++) {
+      console.log(
+        'reencrypted files number = ',
+        reencryptedFiles.value[i].fileNameIndex
+      )
+      reencryptedFileNames.value.push(reencryptedFiles.value[i].fileName)
+    }
 
     console.log('All files re-encrypted successfully.\n ')
   } catch (error) {
@@ -356,19 +370,68 @@ async function uploadAll() {
       throw new Error('Access token not found')
     }
 
+    console.log('Calling Backend')
     const response = await $fetch('/api/vault/uploadAll', {
       method: 'POST',
       body: {
         accessToken: accessToken,
-        files: reencryptedFiles.value,
+        files: reencryptedFileNames.value,
       },
     })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(
-        `Failed to upload file: ${response.statusText} - ${errorText}`
+    // if (!response.ok) {
+    //   const errorText = await response.text()
+    //   throw new Error(
+    //     `Failed to upload file: ${response.statusText} - ${errorText}`
+    //   )
+    // }
+
+    console.log('Response urls = ')
+    const uploadUrls = response.uploadUrls
+    for (let i = 0; i < uploadUrls.length; i++) {
+      console.log(uploadUrls[i])
+    }
+
+    for (let i = 0; i < uploadUrls.length; i++) {
+      const fileToUpload = new File(
+        [
+          reencryptedFiles.value[i].fileNameIndex,
+          '\n',
+          reencryptedFiles.value[i].fileContentiv,
+          reencryptedFiles.value[i].fileContent,
+        ],
+        reencryptedFiles.value[i].fileName,
+        {
+          type: 'application/octet-stream',
+        }
       )
+
+      // Upload the file to OneDrive using the upload session URL in chunks
+      const chunkSize = 1024 * 1024 // 1 MB per chunk
+      let start = 0
+
+      while (start < fileToUpload.size) {
+        console.log('Uploading chunk')
+        const end = Math.min(start + chunkSize, fileToUpload.size)
+        const chunk = fileToUpload.slice(start, end)
+
+        const uploadResponse = await fetch(uploadUrls[i], {
+          method: 'PUT',
+          headers: {
+            'Content-Range': `bytes ${start}-${end - 1}/${fileToUpload.size}`,
+          },
+          body: chunk,
+        })
+
+        if (!uploadResponse.ok && uploadResponse.status !== 308) {
+          const errorText = await uploadResponse.text()
+          throw new Error(
+            `Failed to upload file: ${uploadResponse.status} - ${errorText}`
+          )
+        }
+
+        start = end
+      }
     }
 
     console.log('All files uploaded successfully.\n ')

@@ -23,35 +23,57 @@ export default defineEventHandler(async (event) => {
 
   const { accessToken, files } = await readBody(event)
   const apikey = process.env.CLIENT_SECRET
+  const uploadUrls = []
 
-  for (const file of files) {
-    const fileContentivBuffer = base64ToArrayBuffer(file.fileContentiv)
-    const fileContentBuffer = base64ToArrayBuffer(file.fileContent)
-
-    const encryptedFile = new File(
-      [
-        file.fileNameIndex,
-        '\n',
-        // fileNameivBuffer,
-        fileContentivBuffer,
-        fileContentBuffer,
-      ],
-      file.fileName,
-      {
-        type: 'application/octet-stream',
-      }
-    )
-
+  for (const fileName of files) {
+    // const fileContentivBuffer = base64ToArrayBuffer(file.fileContentiv)
+    // const fileContentBuffer = base64ToArrayBuffer(file.fileContent)
+    // const encryptedFile = new File(
+    //   [
+    //     file.fileNameIndex,
+    //     '\n',
+    //     // fileNameivBuffer,
+    //     fileContentivBuffer,
+    //     fileContentBuffer,
+    //   ],
+    //   file.fileName,
+    //   {
+    //     type: 'application/octet-stream',
+    //   }
+    // )
+    // const response = await fetch(
+    //   `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${encryptedFile.name}:/content`,
+    //   {
+    //     method: 'PUT',
+    //     headers: {
+    //       Authorization: `Bearer ${accessToken}`,
+    //       'Content-Type': encryptedFile.type,
+    //       apikey: apikey || '',
+    //     },
+    //     body: encryptedFile,
+    //   }
+    // )
+    // if (!response.ok) {
+    //   const errorText = await response.text()
+    //   throw new Error(
+    //     `Failed to upload file: ${response.statusText} - ${errorText}`
+    //   )
+    // }
+    console.log('url for: ', fileName)
     const response = await fetch(
-      `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${encryptedFile.name}:/content`,
+      `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${fileName}:/createUploadSession`,
       {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          'Content-Type': encryptedFile.type,
-          apikey: apikey || '',
+          'Content-Type': 'application/json',
         },
-        body: encryptedFile,
+        body: JSON.stringify({
+          item: {
+            '@microsoft.graph.conflictBehavior': 'rename',
+            name: fileName,
+          },
+        }),
       }
     )
 
@@ -61,7 +83,14 @@ export default defineEventHandler(async (event) => {
         `Failed to upload file: ${response.statusText} - ${errorText}`
       )
     }
+
+    const data = await response.json()
+    const uploadUrl = data.uploadUrl
+    console.log('Upload url created: ')
+    console.log(uploadUrl)
+
+    uploadUrls.push(uploadUrl)
   }
 
-  return { ok: true }
+  return { uploadUrls }
 })

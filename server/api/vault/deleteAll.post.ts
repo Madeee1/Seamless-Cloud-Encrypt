@@ -13,9 +13,10 @@ export default defineEventHandler(async (event) => {
 
   const { accessToken, downloadedFiles } = await readBody(event)
 
-  const deletePromises = downloadedFiles.map(async (file: any) => {
+  const deletePromises = downloadedFiles.map(async (fileName: any) => {
+    console.log('Deleting = ', fileName)
     return fetch(
-      `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${file.name}`,
+      `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${fileName}`,
       {
         method: 'DELETE',
         headers: {
@@ -24,7 +25,7 @@ export default defineEventHandler(async (event) => {
       }
     ).then((response) => {
       if (!response.ok) {
-        throw new Error(`Failed to delete ${file.name}: ${response.statusText}`)
+        throw new Error(`Failed to delete ${fileName}: ${response.statusText}`)
       }
     })
   })
