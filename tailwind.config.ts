@@ -34,6 +34,9 @@ export default {
       backgroundImage: {
         wave1: "url('/img/wave1.svg')",
         wave2: "url('/img/wave2.svg')",
+        wave3: "url('/img/wave3.svg')",
+        'custom-gradient':
+          'linear-gradient(to right, #00041e 95%, #154c79 100%)',
       },
     },
   },
