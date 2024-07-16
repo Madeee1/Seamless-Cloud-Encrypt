@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1>Callback here</h1>
+    <h1>Give us a moment..</h1>
     <div
       v-if="connected"
       class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4"
@@ -27,7 +27,6 @@ const user = useSupabaseUser()
 // TODO: CHANGE AFTER
 const accessToken = ref('')
 const refreshToken = ref('')
-const tokenExpiryTime = ref('')
 const connected = ref(false)
 onMounted(() => {
   async function handleCallback() {
@@ -72,15 +71,6 @@ async function createVault() {
     createVaultStore.key
   )
 
-  const decryptedAccessToken = await decrypt(
-    encryptedAccessToken,
-    createVaultStore.key
-  )
-  const decryptedRefreshToken = await decrypt(
-    encryptedRefreshToken,
-    createVaultStore.key
-  )
-
   const { error } = await supabase.from('vault').insert({
     name: createVaultStore.name,
     cloud_folder_name: createVaultStore.cloudFolderName,
@@ -89,6 +79,7 @@ async function createVault() {
     description: createVaultStore.description,
     enc_cloud_access_token: encryptedAccessToken,
     enc_cloud_refresh_token: encryptedRefreshToken,
+    token_expires_in: createVaultStore.tokenExpiresIn,
   })
 
   createVaultStore.$reset()
@@ -144,8 +135,6 @@ async function getAccessToken(code) {
         code_verifier: codeVerifier,
       }),
     })
-    console.log('Here is the response from getting access token:')
-    console.log(response)
 
     if (!response.access_token) {
       const errorText = await response.text()
@@ -156,15 +145,11 @@ async function getAccessToken(code) {
 
     accessToken.value = response.access_token // store access token
     refreshToken.value = response.refresh_token // store refresh token
-    tokenExpiryTime.value = Date.now() + response.expires_in * 1000 // Calculate token expiration time
+    createVaultStore.tokenExpiresIn = Date.now() + response.expires_in * 1000 // Calculate token expiration time
 
-    console.log('Access Token:', accessToken.value) // debugging - log access token
     connected.value = true
     // clean url of its parameters without cleaning the /dashboard/callback
     window.history.replaceState({}, document.title, '/dashboard/callback')
-
-    // TODO:
-    // this.setTokenRefreshInterval()
   } catch (err) {
     error.value = `Error obtaining access token: ${err.message}`
     console.error('Error details:', err) // Log detailed error information
@@ -244,16 +229,6 @@ function fromBase64Url(base64UrlString) {
   }
 
   return byteArray
-}
-
-function base64ToArrayBuffer(base64) {
-  const binaryString = atob(base64)
-  const len = binaryString.length
-  const bytes = new Uint8Array(len)
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i)
-  }
-  return bytes.buff
 }
 
 async function deriveKeyFromPassword(password) {

@@ -1,4 +1,5 @@
 import { _width } from '#tailwind-config/theme'
+import { _width } from '#tailwind-config/theme'
 import type { Config } from 'tailwindcss'
 
 export default {

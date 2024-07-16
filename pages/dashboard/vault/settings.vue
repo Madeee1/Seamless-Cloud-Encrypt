@@ -4,7 +4,8 @@
     <VaultDelete />
     <VaultUpdatePassword />
     <VaultManage />
-    <VaultAutoLock />
+    <TimerAutoLock />
+    <TimerRefreshToken />
   </div>
 </template>
 
