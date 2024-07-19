@@ -39,7 +39,7 @@
         </div>
         <UButton
           class="text-white font-bold py-1 px-3 rounded"
-          @click="handleDownload(file.id)"
+          @click="handleDownload(file)"
         >
           Download
         </UButton>
@@ -67,7 +67,7 @@ export default {
       files: [],
       error: null,
       password: null,
-      selectedFileid: null,
+      selectedFile: null,
       confirmPassword: false,
     }
   },
@@ -78,16 +78,18 @@ export default {
     },
   },
   methods: {
-    handleDownload(fileId) {
+    handleDownload(file) {
       this.confirmPassword = true
-      this.selectedFileid = fileId
+      this.selectedFile = file
     },
     async previewFilename(filename) {
       const vaultStore = useVaultStore()
       const cryptoKeyObj = vaultStore.key
 
       const encryptedFilenameB64 = filename.replace(/\.bin$/, '')
+      console.log('encrypted Filename B64 = ', encryptedFilenameB64)
       const encFNameUInt8Array = this.fromBase64Url(encryptedFilenameB64)
+      console.log('atob works')
       const encryptedFilenameAndiv = encFNameUInt8Array.buffer
 
       const fileNameiv = encryptedFilenameAndiv.slice(0, 12)
@@ -118,7 +120,9 @@ export default {
 
       // Extract the filename, which is b64. Convert to ArrayBuffer for decryption
       const encryptedFilenameB64 = filename.replace(/\.bin$/, '')
+      console.log('encrypted Filename B64 = ', encryptedFilenameB64)
       const encFNameUInt8Array = this.fromBase64Url(encryptedFilenameB64)
+      console.log('atob works')
       const encryptedFilename = encFNameUInt8Array.buffer
 
       // extract filename iv from encrypted file
@@ -127,13 +131,6 @@ export default {
         separatorIndex + 13
       )
       const iv = new Uint8Array(ivBuffer)
-
-      // extract iv from encrypted file
-      // const ivBuffer = fileArrayBuffer.slice(
-      //   separatorIndex + 13,
-      //   separatorIndex + 25
-      // )
-      // const iv = new Uint8Array(ivBuffer)
 
       // extract encrypted content from encrypted file
       const ciphertext = fileArrayBuffer.slice(separatorIndex + 13)
@@ -214,7 +211,7 @@ export default {
       }
     },
 
-    async downloadFile(fileId) {
+    async downloadFile(file) {
       try {
         if (!this.accessToken) {
           throw new Error('Access token not found')
@@ -224,7 +221,7 @@ export default {
           method: 'POST',
           body: {
             accessToken: this.accessToken,
-            fileId: fileId,
+            fileId: file.id,
           },
         })
 
@@ -239,7 +236,7 @@ export default {
         // Decrypt File here
         const decryptedFile = await this.decryptFile(
           encryptedFileArrayBuffer,
-          response.encryptedFilename
+          file.name
         )
 
         // Download the decrypted file
@@ -267,6 +264,7 @@ export default {
       )
 
       // Decode base64 string to a UTF-16 string
+      console.log('atob in fromb64 url function')
       const decodedString = window.atob(paddedBase64String)
 
       // Convert decoded string to byte array
@@ -279,6 +277,7 @@ export default {
     },
 
     base64ToArrayBuffer(base64) {
+      console.log('atob in b64 to arraybuffer function')
       const binaryString = atob(base64)
       const len = binaryString.length
       const bytes = new Uint8Array(len)
@@ -300,9 +299,9 @@ export default {
         })
 
         if (response.ok) {
-          this.downloadFile(this.selectedFileid)
+          this.downloadFile(this.selectedFile)
           this.confirmPassword = false
-          this.selectedFileid = null
+          this.selectedFile = null
           this.password = null
         }
       } catch (error) {
