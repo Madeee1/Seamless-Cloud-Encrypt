@@ -87,9 +87,7 @@ export default {
       const cryptoKeyObj = vaultStore.key
 
       const encryptedFilenameB64 = filename.replace(/\.bin$/, '')
-      console.log('encrypted Filename B64 = ', encryptedFilenameB64)
       const encFNameUInt8Array = this.fromBase64Url(encryptedFilenameB64)
-      console.log('atob works')
       const encryptedFilenameAndiv = encFNameUInt8Array.buffer
 
       const fileNameiv = encryptedFilenameAndiv.slice(0, 12)
@@ -120,9 +118,7 @@ export default {
 
       // Extract the filename, which is b64. Convert to ArrayBuffer for decryption
       const encryptedFilenameB64 = filename.replace(/\.bin$/, '')
-      console.log('encrypted Filename B64 = ', encryptedFilenameB64)
       const encFNameUInt8Array = this.fromBase64Url(encryptedFilenameB64)
-      console.log('atob works')
       const encryptedFilename = encFNameUInt8Array.buffer
 
       // extract filename iv from encrypted file
@@ -148,7 +144,6 @@ export default {
         )
         originalFilename = new TextDecoder().decode(decryptedFilename)
         this.originalFilename.push(originalFilename)
-        console.log('originalFilename = ', originalFilename)
       } catch (error) {
         console.error('error during filename decryption: ', error)
       }
@@ -160,10 +155,6 @@ export default {
           { name: 'AES-GCM', iv: iv },
           cryptoKeyObj,
           ciphertext
-        )
-        console.log(
-          'decrypted data = ',
-          new TextDecoder().decode(decryptedData)
         )
         decryptedBlob = new Blob([decryptedData], {
           type: 'text/plain',
@@ -264,7 +255,6 @@ export default {
       )
 
       // Decode base64 string to a UTF-16 string
-      console.log('atob in fromb64 url function')
       const decodedString = window.atob(paddedBase64String)
 
       // Convert decoded string to byte array
@@ -277,7 +267,6 @@ export default {
     },
 
     base64ToArrayBuffer(base64) {
-      console.log('atob in b64 to arraybuffer function')
       const binaryString = atob(base64)
       const len = binaryString.length
       const bytes = new Uint8Array(len)

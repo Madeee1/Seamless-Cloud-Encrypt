@@ -81,7 +81,7 @@ async function downloadFilesInFolder(accessToken: string, folderId: string) {
         )
       }
 
-      const encryptedFilename = fileResponse.url.split('/').pop()
+      const encryptedFilename = item.name
       const encryptedFileBlob = await fileResponse.blob()
       const encryptedFileBuffer = await encryptedFileBlob.arrayBuffer()
       const encryptedFileBase64 = arrayBufferToBase64(encryptedFileBuffer)
