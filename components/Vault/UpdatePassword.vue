@@ -69,38 +69,6 @@ const decryptedFiles = ref([])
 const reencryptedFiles = ref([])
 const reencryptedFileNames = ref([])
 
-function base64ToArrayBuffer(base64) {
-  const binaryString = atob(base64)
-  const len = binaryString.length
-  const bytes = new Uint8Array(len)
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i)
-  }
-  return bytes.buffer
-}
-
-function fromBase64Url(base64UrlString) {
-  // Replace URL-safe characters back to their original
-  const base64String = base64UrlString.replace(/-/g, '+').replace(/_/g, '/')
-
-  // Pad the base64 string to make its length a multiple of 4
-  const paddedBase64String = base64String.padEnd(
-    base64String.length + ((4 - (base64String.length % 4)) % 4),
-    '='
-  )
-
-  // Decode base64 string to a UTF-16 string
-  const decodedString = window.atob(paddedBase64String)
-
-  // Convert decoded string to byte array
-  const byteArray = new Uint8Array(decodedString.length)
-  for (let i = 0; i < decodedString.length; i++) {
-    byteArray[i] = decodedString.charCodeAt(i)
-  }
-
-  return byteArray
-}
-
 async function confirmUpdate() {
   try {
     const response = await $fetch('/api/vault/auth/update', {
@@ -277,6 +245,8 @@ async function deleteAll() {
 }
 
 async function updateAccessTokens() {
+  // Move to backend?
+  // Get current encrypted access and refresh tokens
   const { data: accessTokens, error: vaultError } = await supabase
     .from('vault')
     .select('enc_cloud_access_token, enc_cloud_refresh_token')
@@ -297,14 +267,12 @@ async function updateAccessTokens() {
       accessTokens.enc_cloud_access_token,
       cryptoKeyObj
     )
-    console.log('access token decrypted')
 
     // Decrypt refresh token
     const decryptedRefreshToken = await decrypt(
       accessTokens.enc_cloud_refresh_token,
       cryptoKeyObj
     )
-    console.log('refresh token decrypted')
 
     // Reencrypt access token
     const reencryptedAccessToken = await encrypt(
@@ -312,7 +280,6 @@ async function updateAccessTokens() {
       newKey.value
     )
     newAccessToken.value = reencryptedAccessToken
-    console.log('access token reencrypted')
 
     // Reencrypt refresh token
     const reencryptedRefreshToken = await encrypt(
@@ -320,9 +287,8 @@ async function updateAccessTokens() {
       newKey.value
     )
     newRefreshToken.value = reencryptedRefreshToken
-    console.log('refresh token reencrypted')
 
-    console.log('Access Token and Refresh Token reencrypted successfully.\n ')
+    console.log('Access Token and Refresh Token updated successfully.\n ')
   } catch (error) {
     throw new Error('Error during access tokens update.')
   }
@@ -396,8 +362,6 @@ async function reencryptAll() {
       const fileNameivB64 = toBase64Url(fileNameiv)
 
       const newFileName = fileNameivB64 + encryptedFilenameB64 + '.bin'
-      const fileContentivB64 = arrayBufferToBase64(contentiv)
-      const fileContentB64 = arrayBufferToBase64(encryptedContent)
 
       i++
       return {
@@ -438,13 +402,9 @@ async function uploadAll() {
       },
     })
 
-    // Caused error: response.text() is not a function
-    // if (!response.ok) {
-    //   const errorText = await response.text()
-    //   throw new Error(
-    //     `Failed to upload file: ${response.statusText} - ${errorText}`
-    //   )
-    // }
+    if (!response.ok) {
+      throw new Error('Error in uploading files.')
+    }
 
     for (let i = 0; i < response.uploadUrls.length; i++) {
       console.log(
@@ -552,13 +512,35 @@ function toBase64Url(byteArray) {
   return base64UrlString
 }
 
-function arrayBufferToBase64(buffer) {
-  let binary = ''
-  const bytes = new Uint8Array(buffer)
-  const len = bytes.byteLength
+function base64ToArrayBuffer(base64) {
+  const binaryString = atob(base64)
+  const len = binaryString.length
+  const bytes = new Uint8Array(len)
   for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i])
+    bytes[i] = binaryString.charCodeAt(i)
   }
-  return btoa(binary)
+  return bytes.buffer
+}
+
+function fromBase64Url(base64UrlString) {
+  // Replace URL-safe characters back to their original
+  const base64String = base64UrlString.replace(/-/g, '+').replace(/_/g, '/')
+
+  // Pad the base64 string to make its length a multiple of 4
+  const paddedBase64String = base64String.padEnd(
+    base64String.length + ((4 - (base64String.length % 4)) % 4),
+    '='
+  )
+
+  // Decode base64 string to a UTF-16 string
+  const decodedString = window.atob(paddedBase64String)
+
+  // Convert decoded string to byte array
+  const byteArray = new Uint8Array(decodedString.length)
+  for (let i = 0; i < decodedString.length; i++) {
+    byteArray[i] = decodedString.charCodeAt(i)
+  }
+
+  return byteArray
 }
 </script>

@@ -46,5 +46,5 @@ export default defineEventHandler(async (event) => {
     uploadUrls.push(uploadUrl)
   }
 
-  return { uploadUrls }
+  return { ok: true, uploadUrls: uploadUrls }
 })
