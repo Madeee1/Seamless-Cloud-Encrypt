@@ -20,7 +20,4 @@ export const useVaultStore = defineStore('vault', {
       this.key = newKey
     },
   },
-  persist: {
-    storage: persistedState.sessionStorage,
-  },
 })
