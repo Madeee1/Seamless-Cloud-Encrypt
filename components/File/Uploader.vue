@@ -40,6 +40,7 @@ export default {
       encryptedFileURL: [],
       keyPass: '',
       newFilename: [],
+      filesToUpload: [],
       // FROM upload.vue
       error: null, // init 2 null
       uploadSuccess: false,
@@ -113,11 +114,14 @@ export default {
             fileName: `${fileNameivBase64}${newFilename}`,
             fileContentiv: iv,
             fileContent: encryptedData,
-            cloudFolderName: vaultStore.cloudFolderName,
           }
 
-          await this.uploadFile(fileInfo)
+          this.filesToUpload.push(fileInfo)
+
+          //await this.uploadFile(fileInfo)
         }
+
+        await this.uploadFile(this.filesToUpload)
       } catch (err) {
         // TODO: better errror handling
         console.error(err)
@@ -133,57 +137,74 @@ export default {
         }, 10000)
       }
     },
-    async uploadFile(file) {
-      console.log('Uploading file:', file.fileName)
-      // upload file to OneDrive using Microsoft Graph API
-      if (!this.accessToken) {
-        throw new Error('Access token not found')
+    async uploadFile(files) {
+      const fileNames = []
+      const vaultStore = useVaultStore()
+      const cloudFolderName = vaultStore.cloudFolderName
+
+      for (const file of files) {
+        fileNames.push(file.fileName)
       }
 
-      // TODO: CHANGE TO only 1 fetch for multiple signed urls
       const response = await $fetch('/api/vault/upload', {
         method: 'POST',
         body: {
-          fileName: file.fileName,
+          fileNames: fileNames,
           accessToken: this.accessToken,
-          cloudFolderName: file.cloudFolderName,
+          cloudFolderName: cloudFolderName,
         },
       })
 
-      const uploadUrl = response.uploadUrl
+      if (!response.ok) {
+        throw new Error('Error during files upload.')
+      }
 
-      const fileToUpload = new File(
-        [file.fileNameIndex, '\n', file.fileContentiv, file.fileContent],
-        file.fileName,
-        {
-          type: 'application/octet-stream',
-        }
-      )
-
-      // Upload the file to OneDrive using the upload session URL in chunks
-      const chunkSize = 1024 * 1024 // 1 MB per chunk
-      let start = 0
-
-      while (start < fileToUpload.size) {
-        const end = Math.min(start + chunkSize, fileToUpload.size)
-        const chunk = fileToUpload.slice(start, end)
-
-        const uploadResponse = await fetch(uploadUrl, {
-          method: 'PUT',
-          headers: {
-            'Content-Range': `bytes ${start}-${end - 1}/${fileToUpload.size}`,
-          },
-          body: chunk,
-        })
-
-        if (!uploadResponse.ok && uploadResponse.status !== 308) {
-          const errorText = await uploadResponse.text()
-          throw new Error(
-            `Failed to upload file: ${uploadResponse.status} - ${errorText}`
-          )
+      for (let i = 0; i < this.filesToUpload.length; i++) {
+        console.log('Uploading file:', this.filesToUpload[i].fileName)
+        console.log('Uploading to: ', response.uploadUrls[i])
+        // upload file to OneDrive using Microsoft Graph API
+        if (!this.accessToken) {
+          throw new Error('Access token not found')
         }
 
-        start = end
+        const fileToUpload = new File(
+          [
+            this.filesToUpload[i].fileNameIndex,
+            '\n',
+            this.filesToUpload[i].fileContentiv,
+            this.filesToUpload[i].fileContent,
+          ],
+          this.filesToUpload[i].fileName,
+          {
+            type: 'application/octet-stream',
+          }
+        )
+
+        // Upload the file to OneDrive using the upload session URL in chunks
+        const chunkSize = 1024 * 1024 // 1 MB per chunk
+        let start = 0
+
+        while (start < fileToUpload.size) {
+          const end = Math.min(start + chunkSize, fileToUpload.size)
+          const chunk = fileToUpload.slice(start, end)
+
+          const uploadResponse = await fetch(response.uploadUrls[i], {
+            method: 'PUT',
+            headers: {
+              'Content-Range': `bytes ${start}-${end - 1}/${fileToUpload.size}`,
+            },
+            body: chunk,
+          })
+
+          if (!uploadResponse.ok && uploadResponse.status !== 308) {
+            const errorText = await uploadResponse.text()
+            throw new Error(
+              `Failed to upload file: ${uploadResponse.status} - ${errorText}`
+            )
+          }
+
+          start = end
+        }
       }
     },
 

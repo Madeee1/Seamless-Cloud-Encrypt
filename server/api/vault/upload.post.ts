@@ -11,36 +11,40 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { fileName, accessToken, cloudFolderName } = await readBody(event)
+  const { fileNames, accessToken, cloudFolderName } = await readBody(event)
+  const uploadUrls: string[] = []
 
   // API key not used
 
-  const response = await fetch(
-    `https://graph.microsoft.com/v1.0/me/drive/root:/${cloudFolderName}/${fileName}:/createUploadSession`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        item: {
-          '@microsoft.graph.conflictBehavior': 'rename',
-          name: fileName,
+  for (const fileName of fileNames) {
+    const response = await fetch(
+      `https://graph.microsoft.com/v1.0/me/drive/root:/${cloudFolderName}/${fileName}:/createUploadSession`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
         },
-      }),
-    }
-  )
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(
-      `Failed to upload file: ${response.statusText} - ${errorText}`
+        body: JSON.stringify({
+          item: {
+            '@microsoft.graph.conflictBehavior': 'rename',
+            name: fileName,
+          },
+        }),
+      }
     )
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(
+        `Failed to upload file: ${response.statusText} - ${errorText}`
+      )
+    }
+
+    const data = await response.json()
+    const uploadUrl = data.uploadUrl
+    uploadUrls.push(uploadUrl)
   }
 
-  const data = await response.json()
-  const uploadUrl = data.uploadUrl
-
-  return { uploadUrl }
+  return { ok: true, uploadUrls: uploadUrls }
 })
