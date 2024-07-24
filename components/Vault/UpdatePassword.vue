@@ -56,46 +56,19 @@ const vault = useVaultStore()
 
 const cryptoKeyObj = vault.key
 const confirmPassword = ref(false)
-const accessToken = sessionStorage.getItem('access_token') || null
+const accessToken = vault.cloudAccessToken
+const cloudFolderName = vault.cloudFolderName
 const passwordConfirmation = ref('')
 const newPassword = ref('')
 const newPasswordConfirmation = ref('')
 const newKey = ref(null)
+const newAccessToken = ref(null)
+const newRefreshToken = ref(null)
 const downloadedFiles = ref(null)
+const downloadedFileNames = ref([])
 const decryptedFiles = ref([])
 const reencryptedFiles = ref([])
-
-function base64ToArrayBuffer(base64) {
-  const binaryString = atob(base64)
-  const len = binaryString.length
-  const bytes = new Uint8Array(len)
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i)
-  }
-  return bytes.buffer
-}
-
-function fromBase64Url(base64UrlString) {
-  // Replace URL-safe characters back to their original
-  const base64String = base64UrlString.replace(/-/g, '+').replace(/_/g, '/')
-
-  // Pad the base64 string to make its length a multiple of 4
-  const paddedBase64String = base64String.padEnd(
-    base64String.length + ((4 - (base64String.length % 4)) % 4),
-    '='
-  )
-
-  // Decode base64 string to a UTF-16 string
-  const decodedString = window.atob(paddedBase64String)
-
-  // Convert decoded string to byte array
-  const byteArray = new Uint8Array(decodedString.length)
-  for (let i = 0; i < decodedString.length; i++) {
-    byteArray[i] = decodedString.charCodeAt(i)
-  }
-
-  return byteArray
-}
+const reencryptedFileNames = ref([])
 
 async function confirmUpdate() {
   try {
@@ -132,7 +105,11 @@ async function confirmUpdate() {
       console.log('Deleting Old Files... ')
       await deleteAll()
 
-      // 7. Update the hashed password attribute in the database
+      // 7. Update access token and refresh token
+      console.log('Updating Access Tokens... ')
+      await updateAccessTokens()
+
+      // 8. Update the hashed password attribute in the database
       console.log('Updating Database Password... ')
       await updatePassword()
     } else {
@@ -145,20 +122,23 @@ async function confirmUpdate() {
     } else if (error.response.status === 401) {
       alert('Wrong password, try again!')
     } else if (error.response.status === 500) {
+      console.error(error)
       alert('Server error, try again later!')
     }
   }
 }
 
 async function updatePassword() {
-  // Update supabase hashed password
+  // Update supabase hashed password, access token, and refresh token
   const saltRounds = 10
   const hashPass = await bcrypt.hash(newPassword.value, saltRounds)
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('vault')
     .update({
       hashed_password: hashPass,
+      enc_cloud_access_token: newAccessToken.value,
+      enc_cloud_refresh_token: newRefreshToken.value,
     })
     .eq('id', vault.id)
     .eq('user_id', user.value.id)
@@ -167,7 +147,12 @@ async function updatePassword() {
   if (error) {
     console.error(error)
   } else {
+    console.log(data)
+    vault.$patch({
+      name: data[0].name,
+    })
     console.log('Vault password updated successfully.\n ')
+    // vault.key = newKey.value
     alert('Vault password update successfull, vault will be locked now.')
     navigateTo('/dashboard')
   }
@@ -179,6 +164,7 @@ async function downloadAll() {
     method: 'POST',
     body: {
       accessToken: accessToken,
+      cloudFolderName: cloudFolderName,
     },
   })
 
@@ -187,6 +173,9 @@ async function downloadAll() {
   }
 
   downloadedFiles.value = response.files
+  for (let i = 0; i < downloadedFiles.value.length; i++) {
+    downloadedFileNames.value.push(downloadedFiles.value[i].name)
+  }
 
   console.log('All files downloaded successfully.\n ')
 }
@@ -247,7 +236,8 @@ async function deleteAll() {
     method: 'POST',
     body: {
       accessToken: accessToken,
-      downloadedFiles: downloadedFiles.value,
+      downloadedFiles: downloadedFileNames.value,
+      cloudFolderName: cloudFolderName,
     },
   })
 
@@ -256,6 +246,56 @@ async function deleteAll() {
   }
 
   console.log('All files deleted successfully.\n ')
+}
+
+async function updateAccessTokens() {
+  // Move to backend?
+  // Get current encrypted access and refresh tokens
+  const { data: accessTokens, error: vaultError } = await supabase
+    .from('vault')
+    .select('enc_cloud_access_token, enc_cloud_refresh_token')
+    .eq('id', vault.id)
+    .eq('user_id', user.value.id)
+    .single()
+
+  if (vaultError) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Internal Server Error',
+    })
+  }
+
+  try {
+    // Decrypt access token
+    const decryptedAccessToken = await decrypt(
+      accessTokens.enc_cloud_access_token,
+      cryptoKeyObj
+    )
+
+    // Decrypt refresh token
+    const decryptedRefreshToken = await decrypt(
+      accessTokens.enc_cloud_refresh_token,
+      cryptoKeyObj
+    )
+
+    // Reencrypt access token
+    const reencryptedAccessToken = await encrypt(
+      decryptedAccessToken,
+      newKey.value
+    )
+    newAccessToken.value = reencryptedAccessToken
+
+    // Reencrypt refresh token
+    const reencryptedRefreshToken = await encrypt(
+      decryptedRefreshToken,
+      newKey.value
+    )
+    newRefreshToken.value = reencryptedRefreshToken
+
+    console.log('Access Token and Refresh Token updated successfully.\n ')
+  } catch (error) {
+    throw new Error('Error during access tokens update.')
+  }
 }
 
 async function deriveKeyFromPassword(password) {
@@ -326,15 +366,13 @@ async function reencryptAll() {
       const fileNameivB64 = toBase64Url(fileNameiv)
 
       const newFileName = fileNameivB64 + encryptedFilenameB64 + '.bin'
-      const fileContentivB64 = arrayBufferToBase64(contentiv)
-      const fileContentB64 = arrayBufferToBase64(encryptedContent)
 
       i++
       return {
         fileNameIndex: i,
         fileName: newFileName,
-        fileContentiv: fileContentivB64,
-        fileContent: fileContentB64,
+        fileContentiv: contentiv,
+        fileContent: encryptedContent,
       }
     })
 
@@ -342,6 +380,10 @@ async function reencryptAll() {
     reencryptedFiles.value = reencryptedFilesResults.filter(
       (file) => file !== null
     )
+
+    for (let i = 0; i < reencryptedFiles.value.length; i++) {
+      reencryptedFileNames.value.push(reencryptedFiles.value[i].fileName)
+    }
 
     console.log('All files re-encrypted successfully.\n ')
   } catch (error) {
@@ -360,21 +402,106 @@ async function uploadAll() {
       method: 'POST',
       body: {
         accessToken: accessToken,
-        files: reencryptedFiles.value,
+        files: reencryptedFileNames.value,
+        cloudFolderName: cloudFolderName,
       },
     })
 
     if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(
-        `Failed to upload file: ${response.statusText} - ${errorText}`
+      throw new Error('Error in uploading files.')
+    }
+
+    for (let i = 0; i < response.uploadUrls.length; i++) {
+      console.log(
+        'Uploading file ',
+        i,
+        ' = ',
+        reencryptedFiles.value[i].fileName
       )
+      const fileToUpload = new File(
+        [
+          reencryptedFiles.value[i].fileNameIndex,
+          '\n',
+          reencryptedFiles.value[i].fileContentiv,
+          reencryptedFiles.value[i].fileContent,
+        ],
+        reencryptedFiles.value[i].fileName,
+        {
+          type: 'application/octet-stream',
+        }
+      )
+
+      // Upload the file to OneDrive using the upload session URL in chunks
+      const chunkSize = 1024 * 1024 // 1 MB per chunk
+      let start = 0
+
+      while (start < fileToUpload.size) {
+        console.log('Uploading chunks')
+        const end = Math.min(start + chunkSize, fileToUpload.size)
+        const chunk = fileToUpload.slice(start, end)
+
+        const uploadResponse = await fetch(response.uploadUrls[i], {
+          method: 'PUT',
+          headers: {
+            'Content-Range': `bytes ${start}-${end - 1}/${fileToUpload.size}`,
+          },
+          body: chunk,
+        })
+
+        if (!uploadResponse.ok && uploadResponse.status !== 308) {
+          const errorText = await uploadResponse.text()
+          throw new Error(
+            `Failed to upload file: ${uploadResponse.status} - ${errorText}`
+          )
+        }
+
+        start = end
+      }
     }
 
     console.log('All files uploaded successfully.\n ')
   } catch (err) {
-    console.error('Error details:', err)
+    console.error('Error during files upload.')
   }
+}
+
+async function encrypt(stringToEncrypt, encryptionKeyObject) {
+  const encoder = new TextEncoder()
+  const encodedString = encoder.encode(stringToEncrypt)
+
+  const iv = crypto.getRandomValues(new Uint8Array(12))
+  const encryptedData = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    encryptionKeyObject,
+    encodedString
+  )
+
+  const stringArray = new Uint8Array(encryptedData)
+  const base64String = toBase64Url(stringArray)
+  const base64IV = toBase64Url(iv)
+
+  return base64IV + base64String
+}
+
+async function decrypt(stringToDecrypt, encryptionKeyObject) {
+  const base64IV = stringToDecrypt.slice(0, 16)
+  const base64String = stringToDecrypt.slice(16)
+
+  const encStringUInt8Array = fromBase64Url(base64String)
+  const encryptedString = encStringUInt8Array.buffer
+
+  const ivUInt8Array = fromBase64Url(base64IV)
+  const iv = ivUInt8Array.buffer
+
+  const decryptedData = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    encryptionKeyObject,
+    encryptedString
+  )
+
+  const decryptedString = new TextDecoder().decode(decryptedData)
+
+  return decryptedString
 }
 
 function toBase64Url(byteArray) {
@@ -390,13 +517,35 @@ function toBase64Url(byteArray) {
   return base64UrlString
 }
 
-function arrayBufferToBase64(buffer) {
-  let binary = ''
-  const bytes = new Uint8Array(buffer)
-  const len = bytes.byteLength
+function base64ToArrayBuffer(base64) {
+  const binaryString = atob(base64)
+  const len = binaryString.length
+  const bytes = new Uint8Array(len)
   for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i])
+    bytes[i] = binaryString.charCodeAt(i)
   }
-  return btoa(binary)
+  return bytes.buffer
+}
+
+function fromBase64Url(base64UrlString) {
+  // Replace URL-safe characters back to their original
+  const base64String = base64UrlString.replace(/-/g, '+').replace(/_/g, '/')
+
+  // Pad the base64 string to make its length a multiple of 4
+  const paddedBase64String = base64String.padEnd(
+    base64String.length + ((4 - (base64String.length % 4)) % 4),
+    '='
+  )
+
+  // Decode base64 string to a UTF-16 string
+  const decodedString = window.atob(paddedBase64String)
+
+  // Convert decoded string to byte array
+  const byteArray = new Uint8Array(decodedString.length)
+  for (let i = 0; i < decodedString.length; i++) {
+    byteArray[i] = decodedString.charCodeAt(i)
+  }
+
+  return byteArray
 }
 </script>
