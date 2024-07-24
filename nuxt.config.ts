@@ -13,6 +13,7 @@ export default defineNuxtConfig({
     '@nuxtjs/robots',
     '@pinia/nuxt',
     '@pinia-plugin-persistedstate/nuxt',
+    '@nuxt/test-utils/module',
   ],
   supabase: {
     redirect: true,
