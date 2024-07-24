@@ -138,18 +138,13 @@ export default {
       }
     },
     async uploadFile(files) {
-      const fileNames = []
       const vaultStore = useVaultStore()
       const cloudFolderName = vaultStore.cloudFolderName
-
-      for (const file of files) {
-        fileNames.push(file.fileName)
-      }
 
       const response = await $fetch('/api/vault/upload', {
         method: 'POST',
         body: {
-          fileNames: fileNames,
+          files: files,
           accessToken: this.accessToken,
           cloudFolderName: cloudFolderName,
         },

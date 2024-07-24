@@ -11,14 +11,14 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { fileNames, accessToken, cloudFolderName } = await readBody(event)
+  const { files, accessToken, cloudFolderName } = await readBody(event)
   const uploadUrls: string[] = []
 
   // API key not used
 
-  for (const fileName of fileNames) {
+  for (const file of files) {
     const response = await fetch(
-      `https://graph.microsoft.com/v1.0/me/drive/root:/${cloudFolderName}/${fileName}:/createUploadSession`,
+      `https://graph.microsoft.com/v1.0/me/drive/root:/${cloudFolderName}/${file.fileName}:/createUploadSession`,
       {
         method: 'POST',
         headers: {
@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
         body: JSON.stringify({
           item: {
             '@microsoft.graph.conflictBehavior': 'rename',
-            name: fileName,
+            name: file.fileName,
           },
         }),
       }
