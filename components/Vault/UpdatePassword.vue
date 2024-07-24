@@ -57,6 +57,7 @@ const vault = useVaultStore()
 const cryptoKeyObj = vault.key
 const confirmPassword = ref(false)
 const accessToken = vault.cloudAccessToken
+const cloudFolderName = vault.cloudFolderName
 const passwordConfirmation = ref('')
 const newPassword = ref('')
 const newPasswordConfirmation = ref('')
@@ -121,6 +122,7 @@ async function confirmUpdate() {
     } else if (error.response.status === 401) {
       alert('Wrong password, try again!')
     } else if (error.response.status === 500) {
+      console.error(error)
       alert('Server error, try again later!')
     }
   }
@@ -162,6 +164,7 @@ async function downloadAll() {
     method: 'POST',
     body: {
       accessToken: accessToken,
+      cloudFolderName: cloudFolderName,
     },
   })
 
@@ -234,6 +237,7 @@ async function deleteAll() {
     body: {
       accessToken: accessToken,
       downloadedFiles: downloadedFileNames.value,
+      cloudFolderName: cloudFolderName,
     },
   })
 
@@ -399,6 +403,7 @@ async function uploadAll() {
       body: {
         accessToken: accessToken,
         files: reencryptedFileNames.value,
+        cloudFolderName: cloudFolderName,
       },
     })
 

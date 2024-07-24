@@ -172,9 +172,12 @@ export default {
     },
 
     async filesList() {
+      const vaultStore = useVaultStore()
+      const cloudFolderName = vaultStore.cloudFolderName
+
       try {
         const response = await fetch(
-          'https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo:/children',
+          `https://graph.microsoft.com/v1.0/me/drive/root:/${cloudFolderName}:/children`,
           {
             method: 'GET',
             headers: {

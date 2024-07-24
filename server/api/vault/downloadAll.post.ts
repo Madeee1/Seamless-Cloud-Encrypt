@@ -108,10 +108,9 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const { accessToken } = await readBody(event)
-    const folderName = 'CryptAndGo'
+    const { accessToken, cloudFolderName } = await readBody(event)
 
-    const folderId = await getFolderIdByName(accessToken, folderName)
+    const folderId = await getFolderIdByName(accessToken, cloudFolderName)
     const downloadedFiles = await downloadFilesInFolder(accessToken, folderId)
 
     return {
