@@ -1,60 +1,75 @@
 <template>
-  <div class="p-4">
-    <form class="space-y-4">
-      <p class="text-lg font-semibold">Create Vault</p>
+  <div class="px-4 text-gray-200">
+    <form class="space-y-2">
+      <p class="text-3xl font-semibold">
+        <span class="text-third-blue">Create V</span>ault
+      </p>
       <div>
-        <label class="block">Name</label>
+        <label class="block text-xl"
+          ><span class="text-third-blue">N</span>ame</label
+        >
         <input
           v-model="createVaultStore.name"
           type="text"
           required
-          class="w-full border border-gray-300 rounded-md p-2"
+          class="w-full border border-gray-300 rounded-md px-2 py-1 text-main-blue font-semibold"
         />
       </div>
       <div>
-        <label class="block">Password</label>
+        <label class="block text-xl"
+          ><span class="text-third-blue">P</span>assword</label
+        >
         <input
           v-model="vaultPassword"
           type="password"
           required
-          class="w-full border border-gray-300 rounded-md p-2"
+          class="w-full border border-gray-300 rounded-md px-2 py-1 text-main-blue font-semibold"
         />
       </div>
       <div>
-        <label class="block">Cloud</label>
+        <label class="block text-xl"
+          ><span class="text-third-blue">C</span>loud</label
+        >
         <select
           v-model="createVaultStore.cloudProvider"
-          class="w-full border border-gray-300 rounded-md p-2"
+          class="w-full border border-gray-300 rounded-md px-2 py-1 text-main-blue font-semibold"
         >
           <option value="None">None</option>
           <option value="OneDrive">OneDrive</option>
         </select>
       </div>
       <div>
-        <label class="block">Description</label>
+        <label class="block text-xl"
+          ><span class="text-third-blue">D</span>escription</label
+        >
         <input
           v-model="createVaultStore.description"
           type="text"
           required
-          class="w-full border border-gray-300 rounded-md p-2"
+          class="w-full border border-gray-300 rounded-md px-2 py-1 text-main-blue font-semibold"
         />
       </div>
       <div>
-        <label class="block">Cloud Folder Name</label>
+        <label class="block text-xl"
+          ><span class="text-third-blue">C</span>loud
+          <span class="text-third-blue">F</span>older
+          <span class="text-third-blue">N</span>ame</label
+        >
         <input
           v-model="createVaultStore.cloudFolderName"
           type="text"
           required
-          class="w-full border border-gray-300 rounded-md p-2"
+          class="w-full border border-gray-300 rounded-md px-2 py-1 text-main-blue font-semibold"
         />
       </div>
     </form>
-    <div class="mt-4">
+    <div class="mt-7">
       <UButton
-        class="px-4 py-2 text-white rounded-md"
+        class="px-4 py-2 text-white rounded-md font-semibold text-md"
+        color="blue"
         @click="saveCreateVault()"
       >
-        Create Vault, Connect to OneDrive
+        Create Vault
       </UButton>
       <p>{{ errorMessage }}</p>
     </div>
