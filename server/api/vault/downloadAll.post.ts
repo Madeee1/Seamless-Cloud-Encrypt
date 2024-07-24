@@ -81,7 +81,7 @@ async function downloadFilesInFolder(accessToken: string, folderId: string) {
         )
       }
 
-      const encryptedFilename = fileResponse.url.split('/').pop()
+      const encryptedFilename = item.name
       const encryptedFileBlob = await fileResponse.blob()
       const encryptedFileBuffer = await encryptedFileBlob.arrayBuffer()
       const encryptedFileBase64 = arrayBufferToBase64(encryptedFileBuffer)
@@ -108,10 +108,9 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const { accessToken } = await readBody(event)
-    const folderName = 'CryptAndGo'
+    const { accessToken, cloudFolderName } = await readBody(event)
 
-    const folderId = await getFolderIdByName(accessToken, folderName)
+    const folderId = await getFolderIdByName(accessToken, cloudFolderName)
     const downloadedFiles = await downloadFilesInFolder(accessToken, folderId)
 
     return {

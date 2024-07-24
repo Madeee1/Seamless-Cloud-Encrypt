@@ -39,7 +39,7 @@
         </div>
         <UButton
           class="text-white font-bold py-1 px-3 rounded"
-          @click="handleDownload(file.id)"
+          @click="handleDownload(file)"
         >
           Download
         </UButton>
@@ -67,7 +67,7 @@ export default {
       files: [],
       error: null,
       password: null,
-      selectedFileid: null,
+      selectedFile: null,
       confirmPassword: false,
     }
   },
@@ -78,9 +78,9 @@ export default {
     },
   },
   methods: {
-    handleDownload(fileId) {
+    handleDownload(file) {
       this.confirmPassword = true
-      this.selectedFileid = fileId
+      this.selectedFile = file
     },
     async previewFilename(filename) {
       const vaultStore = useVaultStore()
@@ -128,13 +128,6 @@ export default {
       )
       const iv = new Uint8Array(ivBuffer)
 
-      // extract iv from encrypted file
-      // const ivBuffer = fileArrayBuffer.slice(
-      //   separatorIndex + 13,
-      //   separatorIndex + 25
-      // )
-      // const iv = new Uint8Array(ivBuffer)
-
       // extract encrypted content from encrypted file
       const ciphertext = fileArrayBuffer.slice(separatorIndex + 13)
 
@@ -151,7 +144,6 @@ export default {
         )
         originalFilename = new TextDecoder().decode(decryptedFilename)
         this.originalFilename.push(originalFilename)
-        console.log('originalFilename = ', originalFilename)
       } catch (error) {
         console.error('error during filename decryption: ', error)
       }
@@ -163,10 +155,6 @@ export default {
           { name: 'AES-GCM', iv: iv },
           cryptoKeyObj,
           ciphertext
-        )
-        console.log(
-          'decrypted data = ',
-          new TextDecoder().decode(decryptedData)
         )
         decryptedBlob = new Blob([decryptedData], {
           type: 'text/plain',
@@ -184,9 +172,12 @@ export default {
     },
 
     async filesList() {
+      const vaultStore = useVaultStore()
+      const cloudFolderName = vaultStore.cloudFolderName
+
       try {
         const response = await fetch(
-          'https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo:/children',
+          `https://graph.microsoft.com/v1.0/me/drive/root:/${cloudFolderName}:/children`,
           {
             method: 'GET',
             headers: {
@@ -214,7 +205,7 @@ export default {
       }
     },
 
-    async downloadFile(fileId) {
+    async downloadFile(file) {
       try {
         if (!this.accessToken) {
           throw new Error('Access token not found')
@@ -224,7 +215,7 @@ export default {
           method: 'POST',
           body: {
             accessToken: this.accessToken,
-            fileId: fileId,
+            fileId: file.id,
           },
         })
 
@@ -239,7 +230,7 @@ export default {
         // Decrypt File here
         const decryptedFile = await this.decryptFile(
           encryptedFileArrayBuffer,
-          response.encryptedFilename
+          file.name
         )
 
         // Download the decrypted file
@@ -300,9 +291,9 @@ export default {
         })
 
         if (response.ok) {
-          this.downloadFile(this.selectedFileid)
+          this.downloadFile(this.selectedFile)
           this.confirmPassword = false
-          this.selectedFileid = null
+          this.selectedFile = null
           this.password = null
         }
       } catch (error) {
