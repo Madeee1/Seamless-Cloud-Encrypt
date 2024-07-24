@@ -1,13 +1,14 @@
 <template>
   <div>
-    <dl v-for="vault in allVaults.vaults" :key="vault.id" class="mt-4">
+    <dl v-for="vault in allVaults.vaults" :key="vault.id" class="mb-3 mt-2 w-full">
       <div
-        class="flex items-center border border-gray-300 p-4 rounded-lg shadow-sm hover:shadow-md hover:border-gray-400 hover:bg-gray-50 focus:shadow-outline transition-all duration-150 ease-in-out cursor-pointer"
+        class="mx-3 flex items-center bg-transparent border border-third-blue p-1 px-2 rounded hover:bg-gray-700 focus:bg-gray-200 focus:shadow-[5px_-3px_0px_rgb(255,0,0)] focus:outline-none focus:ml-0 focus:rounded-l-none transition-all duration-150 ease-in-out cursor-pointer"
         tabindex="0"
         @click="openVault(vault.id, vault.name, vault.description)"
       >
-        <UIcon name="i-heroicons-lock-closed" class="text-gray-700" />
-        <dd class="ml-4 flex-1 text-gray-900">{{ vault.name }}</dd>
+        <dd class="ml-2 flex-1 text-third-blue text-semibold">
+          {{ vault.name }}
+        </dd>
       </div>
     </dl>
   </div>
