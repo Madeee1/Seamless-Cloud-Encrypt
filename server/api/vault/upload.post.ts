@@ -11,12 +11,12 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { fileName, accessToken } = await readBody(event)
+  const { fileName, accessToken, cloudFolderName } = await readBody(event)
 
   // API key not used
 
   const response = await fetch(
-    `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${fileName}:/createUploadSession`,
+    `https://graph.microsoft.com/v1.0/me/drive/root:/${cloudFolderName}/${fileName}:/createUploadSession`,
     {
       method: 'POST',
       headers: {

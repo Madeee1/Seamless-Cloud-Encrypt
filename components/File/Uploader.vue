@@ -113,6 +113,7 @@ export default {
             fileName: `${fileNameivBase64}${newFilename}`,
             fileContentiv: iv,
             fileContent: encryptedData,
+            cloudFolderName: vaultStore.cloudFolderName,
           }
 
           await this.uploadFile(fileInfo)
@@ -145,6 +146,7 @@ export default {
         body: {
           fileName: file.fileName,
           accessToken: this.accessToken,
+          cloudFolderName: file.cloudFolderName,
         },
       })
 
