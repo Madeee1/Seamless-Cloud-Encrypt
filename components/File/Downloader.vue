@@ -20,12 +20,20 @@
     >
       Refresh Files List
     </button>
+    <br />
+    <button
+      class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4"
+      @click="downloadSelected()"
+    >
+      Download Selected
+    </button>
     <ul>
       <li
         v-for="file in files"
         :key="file.id"
         class="flex items-center justify-between bg-gray-100 p-2 rounded mb-2 gap-2"
       >
+        <input type="checkbox" @change="addFile(file)" />
         <div class="flex items-center">
           <img
             v-if="file.thumbnailUrl"
@@ -63,6 +71,7 @@ export default {
       // files: [],
       decryptedFileURL: [],
       originalFilename: [],
+      filesToDownload: [],
       // from download.vue
       files: [],
       error: null,
@@ -78,6 +87,14 @@ export default {
     },
   },
   methods: {
+    downloadSelected() {
+      for (const file of this.filesToDownload) {
+        this.downloadFile(file)
+      }
+    },
+    addFile(file) {
+      this.filesToDownload.push(file)
+    },
     handleDownload(file) {
       this.confirmPassword = true
       this.selectedFile = file
