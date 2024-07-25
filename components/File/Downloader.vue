@@ -82,8 +82,12 @@ export default {
   },
   methods: {
     downloadSelected() {
-      for (const file of this.filesToDownload) {
-        this.downloadFile(file)
+      if (this.filesToDownload.length > 0) {
+        for (const file of this.filesToDownload) {
+          this.downloadFile(file)
+        }
+      } else {
+        alert('No selected file.')
       }
     },
     addFile(file) {
