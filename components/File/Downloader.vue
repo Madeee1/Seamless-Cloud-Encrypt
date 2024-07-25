@@ -45,12 +45,6 @@
             {{ file.oriFilename }}
           </span>
         </div>
-        <UButton
-          class="text-white font-bold py-1 px-3 rounded"
-          @click="handleDownload(file)"
-        >
-          Download
-        </UButton>
       </li>
     </ul>
     <div
@@ -93,11 +87,13 @@ export default {
       }
     },
     addFile(file) {
-      this.filesToDownload.push(file)
-    },
-    handleDownload(file) {
-      this.confirmPassword = true
-      this.selectedFile = file
+      if (!this.filesToDownload.includes(file)) {
+        this.filesToDownload.push(file)
+      } else {
+        this.filesToDownload = this.filesToDownload.filter(
+          (element) => element !== file
+        )
+      }
     },
     async previewFilename(filename) {
       const vaultStore = useVaultStore()
@@ -316,10 +312,19 @@ export default {
       } catch (error) {
         if (!error.response) {
           alert('Network error, try again later!')
+          this.confirmPassword = false
+          this.selectedFile = null
+          this.password = null
         } else if (error.response.status === 401) {
           alert('Wrong password, try again!')
+          this.confirmPassword = false
+          this.selectedFile = null
+          this.password = null
         } else if (error.response.status === 500) {
           alert('Server error, try again later!')
+          this.confirmPassword = false
+          this.selectedFile = null
+          this.password = null
         }
       }
     },
