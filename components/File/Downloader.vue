@@ -23,7 +23,7 @@
     <br />
     <button
       class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4"
-      @click="downloadSelected()"
+      @click="confirmPassword = true"
     >
       Download Selected
     </button>
@@ -308,7 +308,7 @@ export default {
         })
 
         if (response.ok) {
-          this.downloadFile(this.selectedFile)
+          this.downloadSelected()
           this.confirmPassword = false
           this.selectedFile = null
           this.password = null
