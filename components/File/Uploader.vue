@@ -1,31 +1,39 @@
 <template>
-  <div class="flex flex-col gap-4">
-    <div>
-      <p class="text-lg font-semibold">
-        Upload files you want to encrypt upload here
+  <div class="flex flex-col h-full px-4">
+    <div class="w-full px-8 py-2 space-y-2">
+      <p
+        class="text-2xl font-semibold text-gray-200 first-letter:text-third-blue"
+      >
+        Upload the files you want to encrypt here
       </p>
       <input
+        id="file-input"
         ref="fileInput"
         type="file"
         multiple
-        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+        class="block w-full text-lg text-gray-300 file:mr-5 file:w-1/6 file:py-1 file:px-2 file:rounded file:border-0 file:font-semibold file:bg-blue-500 file:text-gray-200 hover:file:bg-blue-700"
         @change="handleFileUpload"
       />
     </div>
-    <div
-      v-if="error"
-      class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
-      role="alert"
-    >
-      <strong class="font-bold">Error:</strong>
-      <span class="block sm:inline">{{ error }}</span>
-    </div>
-    <div
-      v-if="uploadSuccess"
-      class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative"
-      role="alert"
-    >
-      File uploaded successfully!
+    <div class="w-full px-10 ml-5 pt-3">
+      <div
+        v-if="error"
+        class="px-10 py-2 bg-warning-red transform -skew-x-12 text-gray-200 rounded relative"
+        role="alert"
+      >
+        <strong class="font-bold text-xl">ERROR!</strong>
+        <br />
+        <span class="pl-5 block sm:inline transform skew-x-12">{{
+          error
+        }}</span>
+      </div>
+      <div
+        v-if="uploadSuccess"
+        class="px-10 py-2 bg-third-blue transform -skew-x-12 text-gray-200 rounded relative"
+        role="alert"
+      >
+        File uploaded successfully!
+      </div>
     </div>
   </div>
 </template>
