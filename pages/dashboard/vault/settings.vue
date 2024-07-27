@@ -1,9 +1,9 @@
 <template>
-  <div class="flex flex-col gap-8">
+  <div class="flex flex-col gap-4">
     <VaultUpdate />
-    <VaultDelete />
     <VaultUpdatePassword />
     <VaultManage />
+    <VaultDelete />
     <TimerAutoLock />
     <TimerRefreshToken />
   </div>
