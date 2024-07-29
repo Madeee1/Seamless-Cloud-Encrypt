@@ -1,47 +1,69 @@
 <template>
-  <div class="my-2">
-    <h1 class="text-3xl font-bold text-gray-800 mb-6">Update Password</h1>
-    <UButton
-      class="text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-      @click="confirmPassword = true"
-    >
-      Change Password
-    </UButton>
-    <div v-if="confirmPassword">
-      <label for="confirm-password">Confirm Password:</label>
-      <input
-        id="confirm-password"
-        v-model="passwordConfirmation"
-        type="password"
-        placeholder="Enter vault password"
-        class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-      />
-    </div>
-    <div v-if="confirmPassword">
-      <label for="new-password">New Password:</label>
-      <input
-        id="new-password"
-        v-model="newPassword"
-        type="password"
-        placeholder="Enter new password"
-        class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-      />
-    </div>
-    <div v-if="confirmPassword">
-      <label for="confirm-new-password">Confirm New Password:</label>
-      <input
-        id="confirm-new-password"
-        v-model="newPasswordConfirmation"
-        type="password"
-        placeholder="Enter new password again"
-        class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-      />
-      <UButton class="mx-4 mt-4" @click="confirmUpdate">Confirm</UButton>
-      <UButton
-        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-        @click="confirmPassword = false"
-        >Cancel</UButton
+  <div class="flex flex-col h-full px-4">
+    <div class="w-full px-8 space-y-2">
+      <h1
+        class="text-3xl font-semibold text-gray-200 first-letter:text-third-blue"
       >
+        Update <span class="text-third-blue">V</span>ault's
+        <span class="text-third-blue">P</span>assword
+      </h1>
+      <UButton
+        class="block w-1/6 text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded"
+        @click="confirmPassword = true"
+      >
+        Change Password
+      </UButton>
+      <div v-if="confirmPassword" class="mb-3 first-letter:text-third-blue">
+        <label
+          for="confirm-password"
+          class="text-xl font-semibold text-gray-200"
+          >Enter Password</label
+        >
+        <input
+          id="confirm-password"
+          v-model="passwordConfirmation"
+          type="password"
+          placeholder="Enter Vault's Password"
+          class="w-full px-4 py-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+      <div v-if="confirmPassword" class="mb-3 first-letter:text-third-blue">
+        <label for="new-password" class="text-xl font-semibold text-gray-200"
+          >New Password</label
+        >
+        <input
+          id="new-password"
+          v-model="newPassword"
+          type="password"
+          placeholder="Enter New Vault's Password"
+          class="w-full px-4 py-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+      <div v-if="confirmPassword" class="mb-3 first-letter:text-third-blue">
+        <label
+          for="confirm-new-password"
+          class="text-xl font-semibold text-gray-200"
+          >Confirm New Password</label
+        >
+        <input
+          id="confirm-new-password"
+          v-model="newPasswordConfirmation"
+          type="password"
+          placeholder="Re-enter New Vault's Password"
+          class="w-full px-4 py-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+      <div v-if="confirmPassword" class="pt-5 flex justify-end space-x-2">
+        <UButton
+          class="block text-center w-1/6 text-lg font-semibold bg-white hover:bg-gray-200 text-second-blue py-1 px-2 rounded"
+          @click="confirmPassword = false"
+          >Cancel</UButton
+        ><UButton
+          class="block text-center w-1/6 text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded"
+          @click="confirmUpdate"
+          >Confirm</UButton
+        >
+      </div>
     </div>
   </div>
 </template>

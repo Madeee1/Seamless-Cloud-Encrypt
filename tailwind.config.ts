@@ -15,6 +15,7 @@ export default {
         'main-blue': '#00041e',
         'second-blue': '#001FD2',
         'third-blue': '#0FA2FF',
+        'warning-red': '#F80113',
       },
       fontFamily: {
         sans: ['Lato', 'sans-serif'],

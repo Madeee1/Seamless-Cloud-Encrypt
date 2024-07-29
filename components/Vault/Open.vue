@@ -1,23 +1,37 @@
 <template>
-  <div class="flex flex-col items-center justify-center h-full p-4">
-    <div class="w-full max-w-md p-8 space-y-4 bg-white rounded-lg shadow">
-      <h1 class="text-xl font-semibold text-gray-800">
-        You are trying to open vault: {{ vault.name }}
+  <div class="flex flex-col items-center justify-center h-full px-4">
+    <div class="w-full px-8 py-2 space-y-2">
+      <h1
+        class="text-xl font-semibold text-gray-200 first-letter:text-third-blue"
+      >
+        You are trying to open vault <br />
+        <span class="text-3xl text-third-blue ml-5">{{ vault.name }}</span>
       </h1>
-      <h2 class="text font-semibold text-gray-800">
-        Vault Description: <br />
-        <br />
-        {{ vault.description }}
+      <h2
+        class="text-xl font-semibold text-gray-200 pt-2 first-letter:text-third-blue"
+      >
+        Vault Description <br />
+        <span class="text-2xl text-third-blue ml-5">{{
+          vault.description
+        }}</span>
+      </h2>
+      <hr class="w-full h-[3px] bg-white rounded" />
+      <h2
+        class="text-xl font-semibold text-gray-200 pt-2 first-letter:text-third-blue"
+      >
+        Please enter your vault's password ^-^
       </h2>
       <input
         v-model="password"
         type="password"
         placeholder="Enter vault password"
-        class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
+        class="w-full px-4 py-2 border rounded"
       />
       <!--Submit button-->
       <UButton
-        class="w-full px-4 py-2 text-white focus:outline-none focus:ring-2"
+        block
+        class="w-full py-2 text-gray-200 text-xl hover:text-white"
+        color="blue"
         @click="openVault"
       >
         Submit

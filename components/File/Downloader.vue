@@ -1,21 +1,27 @@
 <template>
-  <div class="max-w-md p-4">
-    <h1 class="text-2xl font-bold mb-4">Download:</h1>
-    <div v-if="confirmPassword">
-      <label for="confirm-password">Confirm Password:</label>
-      <input
-        id="confirm-password"
-        v-model="password"
-        type="password"
-        placeholder="Enter vault password"
-        class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-      />
-      <UButton class="mx-4 mt-4" @click="confirmDownload">Confirm</UButton>
-      <br />
-      <br />
+  <div class="flex flex-col h-full px-4">
+    <div class="w-full px-8 py-2 space-y-2">
+      <h1
+        class="text-2xl font-semibold text-gray-200 first-letter:text-third-blue"
+      >
+        Download the files you have encrypted in the vault
+      </h1>
+      <div v-if="confirmPassword">
+        <label for="confirm-password">Confirm Password:</label>
+        <input
+          id="confirm-password"
+          v-model="password"
+          type="password"
+          placeholder="Enter vault password"
+          class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
+        />
+        <UButton class="mx-4 mt-4" @click="confirmDownload">Confirm</UButton>
+        <br />
+        <br />
+      </div>
     </div>
     <button
-      class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
+      class="block w-1/6 text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded mb-4"
       @click="filesList"
     >
       Refresh Files List
@@ -47,12 +53,18 @@
         </div>
       </li>
     </ul>
-    <div
-      v-if="error"
-      class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
-      role="alert"
-    >
-      <p>Error: {{ error }}</p>
+    <div class="w-full px-10 ml-5 pt-3">
+      <div
+        v-if="error"
+        class="px-10 py-2 bg-warning-red transform -skew-x-12 text-gray-200 rounded relative"
+        role="alert"
+      >
+        <strong class="font-bold text-xl">ERROR!</strong>
+        <br />
+        <span class="pl-5 block sm:inline transform skew-x-12">{{
+          error
+        }}</span>
+      </div>
     </div>
   </div>
 </template>
