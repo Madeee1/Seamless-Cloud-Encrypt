@@ -20,12 +20,20 @@
     >
       Refresh Files List
     </button>
+    <br />
+    <button
+      class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4"
+      @click="confirmPassword = true"
+    >
+      Download Selected
+    </button>
     <ul>
       <li
         v-for="file in files"
         :key="file.id"
         class="flex items-center justify-between bg-gray-100 p-2 rounded mb-2 gap-2"
       >
+        <input type="checkbox" @change="addFile(file)" />
         <div class="flex items-center">
           <img
             v-if="file.thumbnailUrl"
@@ -37,12 +45,6 @@
             {{ file.oriFilename }}
           </span>
         </div>
-        <UButton
-          class="text-white font-bold py-1 px-3 rounded"
-          @click="handleDownload(file)"
-        >
-          Download
-        </UButton>
       </li>
     </ul>
     <div
@@ -63,6 +65,7 @@ export default {
       // files: [],
       decryptedFileURL: [],
       originalFilename: [],
+      filesToDownload: [],
       // from download.vue
       files: [],
       error: null,
@@ -78,9 +81,23 @@ export default {
     },
   },
   methods: {
-    handleDownload(file) {
-      this.confirmPassword = true
-      this.selectedFile = file
+    downloadSelected() {
+      if (this.filesToDownload.length > 0) {
+        for (const file of this.filesToDownload) {
+          this.downloadFile(file)
+        }
+      } else {
+        alert('No selected file.')
+      }
+    },
+    addFile(file) {
+      if (!this.filesToDownload.includes(file)) {
+        this.filesToDownload.push(file)
+      } else {
+        this.filesToDownload = this.filesToDownload.filter(
+          (element) => element !== file
+        )
+      }
     },
     async previewFilename(filename) {
       const vaultStore = useVaultStore()
@@ -291,7 +308,7 @@ export default {
         })
 
         if (response.ok) {
-          this.downloadFile(this.selectedFile)
+          this.downloadSelected()
           this.confirmPassword = false
           this.selectedFile = null
           this.password = null
@@ -299,10 +316,19 @@ export default {
       } catch (error) {
         if (!error.response) {
           alert('Network error, try again later!')
+          this.confirmPassword = false
+          this.selectedFile = null
+          this.password = null
         } else if (error.response.status === 401) {
           alert('Wrong password, try again!')
+          this.confirmPassword = false
+          this.selectedFile = null
+          this.password = null
         } else if (error.response.status === 500) {
           alert('Server error, try again later!')
+          this.confirmPassword = false
+          this.selectedFile = null
+          this.password = null
         }
       }
     },
