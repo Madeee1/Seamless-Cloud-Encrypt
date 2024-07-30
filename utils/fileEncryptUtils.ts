@@ -45,9 +45,9 @@ export async function decryptFile(
   encryptionKeyObject: CryptoKey
 ): Promise<File> {
   // extract index of orignal encrypted filename
-  const separatorIndex = new Uint8Array(encryptedFile).indexOf(
-    '\n'.charCodeAt(0)
-  )
+  // const separatorIndex = new Uint8Array(encryptedFile).indexOf(
+  //   '\n'.charCodeAt(0)
+  // )
 
   // Extract the filename, which is b64. Convert to ArrayBuffer for decryption
   console.log('encrypted filename = ', encryptedFilename)
@@ -56,11 +56,11 @@ export async function decryptFile(
   const encryptedFilenameAndIv = encFNameUInt8Array.buffer
 
   // extract filename iv from encrypted file
-  const ivBuffer = encryptedFile.slice(separatorIndex + 1, separatorIndex + 13)
+  const ivBuffer = encryptedFile.slice(0, 12)
   const iv = new Uint8Array(ivBuffer)
 
   // extract encrypted content from encrypted file
-  const ciphertext = encryptedFile.slice(separatorIndex + 13)
+  const ciphertext = encryptedFile.slice(12)
 
   const filenameiv = encryptedFilenameAndIv.slice(0, 12)
   const encryptedFilenameOnly = encryptedFilenameAndIv.slice(12)

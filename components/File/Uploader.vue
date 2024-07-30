@@ -41,6 +41,7 @@
 <script>
 import { useVaultStore } from '@/stores/vault'
 import { toBase64Url } from '~/utils/encryptionUtils'
+import { encryptFile } from '~/utils/fileEncryptUtils'
 
 export default {
   data() {
@@ -49,6 +50,7 @@ export default {
       encryptedFileURL: [],
       keyPass: '',
       newFilename: [],
+      fileNames: [],
       filesToUpload: [],
       // FROM upload.vue
       error: null, // init 2 null
@@ -59,6 +61,10 @@ export default {
     accessToken() {
       const vaultStore = useVaultStore()
       return vaultStore.cloudAccessToken
+    },
+    cryptoKeyObj() {
+      const vaultStore = useVaultStore()
+      return vaultStore.key
     },
   },
   methods: {
@@ -72,66 +78,76 @@ export default {
       try {
         for (let i = 0; i < this.files.length; i++) {
           // derive key from password
-          const cryptoKeyObj = vaultStore.key
-          console.log('Uploading file = ', this.files[i].name)
+          // const cryptoKeyObj = vaultStore.key
+          // console.log('Uploading file = ', this.files[i].name)
 
-          // convert file to arraybuffer
-          const file = this.files[i]
-          const fileAB = await file.arrayBuffer()
+          // // convert file to arraybuffer
+          // const file = this.files[i]
+          // const fileAB = await file.arrayBuffer()
 
-          // generate iv
-          const iv = crypto.getRandomValues(new Uint8Array(12))
+          // // generate iv
+          // const iv = crypto.getRandomValues(new Uint8Array(12))
 
-          // encrypt data
-          const encryptedData = await crypto.subtle.encrypt(
-            { name: 'AES-GCM', iv },
-            cryptoKeyObj,
-            fileAB
+          // // encrypt data
+          // const encryptedData = await crypto.subtle.encrypt(
+          //   { name: 'AES-GCM', iv },
+          //   cryptoKeyObj,
+          //   fileAB
+          // )
+
+          // // get filename and iv for filename encryption
+          // const encodedFilename = encoder.encode(file.name)
+          // const filenameiv = crypto.getRandomValues(new Uint8Array(12))
+
+          // // encrypt filename
+          // const encryptedFilename = await crypto.subtle.encrypt(
+          //   { name: 'AES-GCM', iv: filenameiv },
+          //   cryptoKeyObj,
+          //   encodedFilename
+          // )
+
+          // // convert encrypted filename to readable string
+          // const filenameArray = new Uint8Array(encryptedFilename)
+          // // const filenameString = String.fromCharCode.apply(null, filenameArray)
+          // const base64Filename = toBase64Url(filenameArray)
+          // const newFilename = base64Filename + '.bin'
+          // this.newFilename.push(newFilename)
+
+          // // create blob for file download
+          // // concatenate index for pinia filenameArray, newline separator, filenameiv, and iv into encrypted file
+          // const encryptedBlob = new Blob(
+          //   [i, '\n', filenameiv, iv, encryptedData],
+          //   { type: 'application/octet-stream' }
+          // )
+          // this.encryptedFileURL.push(URL.createObjectURL(encryptedBlob))
+
+          // // file info details for file creation in server
+
+          // const fileNameivBase64 = toBase64Url(filenameiv)
+
+          // const fileInfo = {
+          //   fileNameIndex: i,
+          //   fileName: `${fileNameivBase64}${newFilename}`,
+          //   fileContentiv: iv,
+          //   fileContent: encryptedData,
+          // }
+          const fileToUpload = await encryptFile(
+            this.files[i],
+            this.cryptoKeyObj
           )
 
-          // get filename and iv for filename encryption
-          const encodedFilename = encoder.encode(file.name)
-          const filenameiv = crypto.getRandomValues(new Uint8Array(12))
+          console.log('FILENAME = ', fileToUpload.name)
 
-          // encrypt filename
-          const encryptedFilename = await crypto.subtle.encrypt(
-            { name: 'AES-GCM', iv: filenameiv },
-            cryptoKeyObj,
-            encodedFilename
-          )
-
-          // convert encrypted filename to readable string
-          const filenameArray = new Uint8Array(encryptedFilename)
-          // const filenameString = String.fromCharCode.apply(null, filenameArray)
-          const base64Filename = toBase64Url(filenameArray)
-          const newFilename = base64Filename + '.bin'
-          this.newFilename.push(newFilename)
-
-          // create blob for file download
-          // concatenate index for pinia filenameArray, newline separator, filenameiv, and iv into encrypted file
-          const encryptedBlob = new Blob(
-            [i, '\n', filenameiv, iv, encryptedData],
-            { type: 'application/octet-stream' }
-          )
-          this.encryptedFileURL.push(URL.createObjectURL(encryptedBlob))
-
-          // file info details for file creation in server
-
-          const fileNameivBase64 = toBase64Url(filenameiv)
-
-          const fileInfo = {
-            fileNameIndex: i,
-            fileName: `${fileNameivBase64}${newFilename}`,
-            fileContentiv: iv,
-            fileContent: encryptedData,
-          }
-
-          this.filesToUpload.push(fileInfo)
-
-          //await this.uploadFile(fileInfo)
+          this.filesToUpload.push(fileToUpload)
+          this.fileNames.push(fileToUpload.name)
+          // this.filesToUpload.push(fileInfo)
         }
 
-        await this.uploadFile(this.filesToUpload)
+        console.log('file names to upload: ')
+        for (const file of this.filesToUpload) {
+          console.log(file.name)
+        }
+        await this.uploadFile()
       } catch (err) {
         // TODO: better errror handling
         console.error(err)
@@ -147,14 +163,19 @@ export default {
         }, 10000)
       }
     },
-    async uploadFile(files) {
+    async uploadFile() {
       const vaultStore = useVaultStore()
       const cloudFolderName = vaultStore.cloudFolderName
+
+      console.log('fileNames in upload file')
+      for (const file of this.fileNames) {
+        console.log(file)
+      }
 
       const response = await $fetch('/api/vault/upload', {
         method: 'POST',
         body: {
-          files: files,
+          files: this.fileNames,
           accessToken: this.accessToken,
           cloudFolderName: cloudFolderName,
         },
@@ -172,31 +193,32 @@ export default {
           throw new Error('Access token not found')
         }
 
-        const fileToUpload = new File(
-          [
-            this.filesToUpload[i].fileNameIndex,
-            '\n',
-            this.filesToUpload[i].fileContentiv,
-            this.filesToUpload[i].fileContent,
-          ],
-          this.filesToUpload[i].fileName,
-          {
-            type: 'application/octet-stream',
-          }
-        )
+        // const fileToUpload = new File(
+        //   [
+        //     this.filesToUpload[i].fileNameIndex,
+        //     '\n',
+        //     this.filesToUpload[i].fileContentiv,
+        //     this.filesToUpload[i].fileContent,
+        //   ],
+        //   this.filesToUpload[i].fileName,
+        //   {
+        //     type: 'application/octet-stream',
+        //   }
+        // )
 
         // Upload the file to OneDrive using the upload session URL in chunks
         const chunkSize = 1024 * 1024 // 1 MB per chunk
         let start = 0
+        console.log('uploading ', this.fileNames[i])
 
-        while (start < fileToUpload.size) {
-          const end = Math.min(start + chunkSize, fileToUpload.size)
-          const chunk = fileToUpload.slice(start, end)
+        while (start < this.filesToUpload[i].size) {
+          const end = Math.min(start + chunkSize, this.filesToUpload[i].size)
+          const chunk = this.filesToUpload[i].slice(start, end)
 
           const uploadResponse = await fetch(response.uploadUrls[i], {
             method: 'PUT',
             headers: {
-              'Content-Range': `bytes ${start}-${end - 1}/${fileToUpload.size}`,
+              'Content-Range': `bytes ${start}-${end - 1}/${this.filesToUpload[i].size}`,
             },
             body: chunk,
           })
