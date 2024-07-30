@@ -12,7 +12,7 @@ describe('FileUploader', () => {
   it('Can mount the component', async () => {
     const component = await mountSuspended(FileUploader)
     expect(component.text()).toMatchInlineSnapshot(
-      `"Upload files you want to encrypt upload here"`
+      `"Upload the files you want to encrypt here"`
     )
   })
 
