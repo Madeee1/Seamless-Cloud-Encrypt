@@ -40,6 +40,7 @@
 
 <script>
 import { useVaultStore } from '@/stores/vault'
+import { toBase64Url } from '~/utils/encryptionUtils'
 
 export default {
   data() {
@@ -102,7 +103,7 @@ export default {
           // convert encrypted filename to readable string
           const filenameArray = new Uint8Array(encryptedFilename)
           // const filenameString = String.fromCharCode.apply(null, filenameArray)
-          const base64Filename = this.toBase64Url(filenameArray)
+          const base64Filename = toBase64Url(filenameArray)
           const newFilename = base64Filename + '.bin'
           this.newFilename.push(newFilename)
 
@@ -116,7 +117,7 @@ export default {
 
           // file info details for file creation in server
 
-          const fileNameivBase64 = this.toBase64Url(filenameiv)
+          const fileNameivBase64 = toBase64Url(filenameiv)
 
           const fileInfo = {
             fileNameIndex: i,
@@ -216,21 +217,6 @@ export default {
       this.encryptedFileURL = []
       this.newFilename = []
       this.filesToUpload = []
-    },
-
-    toBase64Url(byteArray) {
-      // Convert byteArray to a standard base64 string
-      const base64String = window.btoa(
-        String.fromCharCode.apply(null, byteArray)
-      )
-
-      // Make the base64 string URL and filename safe
-      const base64UrlString = base64String
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '')
-
-      return base64UrlString
     },
     toHexString(byteArray) {
       return Array.from(byteArray, function (byte) {
