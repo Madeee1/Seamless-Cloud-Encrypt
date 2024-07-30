@@ -72,6 +72,7 @@ export default {
         for (let i = 0; i < this.files.length; i++) {
           // derive key from password
           const cryptoKeyObj = vaultStore.key
+          console.log('Uploading file = ', this.files[i].name)
 
           // convert file to arraybuffer
           const file = this.files[i]
@@ -163,7 +164,7 @@ export default {
       }
 
       for (let i = 0; i < this.filesToUpload.length; i++) {
-        console.log('Uploading file:', this.filesToUpload[i].fileName)
+        // console.log('Uploading file:', this.filesToUpload[i].fileName)
         console.log('Uploading to: ', response.uploadUrls[i])
         // upload file to OneDrive using Microsoft Graph API
         if (!this.accessToken) {
@@ -209,6 +210,12 @@ export default {
           start = end
         }
       }
+
+      // Clear arrays for next uploads
+      this.files = []
+      this.encryptedFileURL = []
+      this.newFilename = []
+      this.filesToUpload = []
     },
 
     toBase64Url(byteArray) {
