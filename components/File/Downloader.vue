@@ -70,6 +70,7 @@
 </template>
 <script>
 import { useVaultStore } from '@/stores/vault'
+import { decryptFile } from '~/utils/fileEncryptUtils'
 
 export default {
   data() {
@@ -90,6 +91,10 @@ export default {
     accessToken() {
       const vaultStore = useVaultStore()
       return vaultStore.cloudAccessToken
+    },
+    cryptoKeyObj() {
+      const vaultStore = useVaultStore()
+      return vaultStore.key
     },
   },
   methods: {
@@ -257,9 +262,14 @@ export default {
         )
 
         // Decrypt File here
-        const decryptedFile = await this.decryptFile(
+        // const decryptedFile = await this.decryptFile(
+        //   encryptedFileArrayBuffer,
+        //   file.name
+        // )
+        const decryptedFile = await decryptFile(
+          file.name,
           encryptedFileArrayBuffer,
-          file.name
+          this.cryptoKeyObj
         )
 
         // Download the decrypted file
