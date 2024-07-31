@@ -80,7 +80,6 @@ import {
   encryptFile,
   decryptFile,
   base64ToArrayBuffer,
-  arrayBufferToBase64,
 } from '~/utils/fileEncryptUtils'
 import bcrypt from 'bcryptjs'
 

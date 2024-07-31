@@ -70,7 +70,7 @@
 </template>
 <script>
 import { useVaultStore } from '@/stores/vault'
-import { decryptFile } from '~/utils/fileEncryptUtils'
+import { decryptFile, base64ToArrayBuffer } from '~/utils/fileEncryptUtils'
 
 export default {
   data() {
@@ -191,7 +191,7 @@ export default {
           throw new Error(`Failed to download file: ${response.statusText}`)
         }
 
-        const encryptedFileArrayBuffer = this.base64ToArrayBuffer(
+        const encryptedFileArrayBuffer = base64ToArrayBuffer(
           response.encryptedBlob
         )
 
@@ -238,16 +238,6 @@ export default {
       }
 
       return byteArray
-    },
-
-    base64ToArrayBuffer(base64) {
-      const binaryString = atob(base64)
-      const len = binaryString.length
-      const bytes = new Uint8Array(len)
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i)
-      }
-      return bytes.buffer
     },
 
     async confirmDownload() {

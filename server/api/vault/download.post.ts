@@ -1,14 +1,5 @@
 import { serverSupabaseUser } from '#supabase/server'
-
-function arrayBufferToBase64(buffer: ArrayBuffer) {
-  let binary = ''
-  const bytes = new Uint8Array(buffer)
-  const len = bytes.byteLength
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i])
-  }
-  return btoa(binary)
-}
+import { arrayBufferToBase64 } from '~/utils/fileEncryptUtils'
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
