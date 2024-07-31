@@ -70,6 +70,7 @@
 </template>
 <script>
 import { useVaultStore } from '@/stores/vault'
+import { decryptFile } from '~/utils/fileEncryptUtils'
 
 export default {
   data() {
@@ -90,6 +91,10 @@ export default {
     accessToken() {
       const vaultStore = useVaultStore()
       return vaultStore.cloudAccessToken
+    },
+    cryptoKeyObj() {
+      const vaultStore = useVaultStore()
+      return vaultStore.key
     },
   },
   methods: {
@@ -132,72 +137,6 @@ export default {
       } catch (error) {
         return 'Undecipherable_Filename.txt'
       }
-    },
-
-    async decryptFile(fileArrayBuffer, filename) {
-      const vaultStore = useVaultStore()
-      // file converted to arrayBuffer in backend
-      // get key and filename from pinia store
-      const cryptoKeyObj = vaultStore.key
-
-      // extract index of orignal encrypted filename
-      const separatorIndex = new Uint8Array(fileArrayBuffer).indexOf(
-        '\n'.charCodeAt(0)
-      )
-
-      // Extract the filename, which is b64. Convert to ArrayBuffer for decryption
-      const encryptedFilenameB64 = filename.replace(/\.bin$/, '')
-      const encFNameUInt8Array = this.fromBase64Url(encryptedFilenameB64)
-      const encryptedFilename = encFNameUInt8Array.buffer
-
-      // extract filename iv from encrypted file
-      const ivBuffer = fileArrayBuffer.slice(
-        separatorIndex + 1,
-        separatorIndex + 13
-      )
-      const iv = new Uint8Array(ivBuffer)
-
-      // extract encrypted content from encrypted file
-      const ciphertext = fileArrayBuffer.slice(separatorIndex + 13)
-
-      const filenameiv = encryptedFilename.slice(0, 12)
-      const encryptedFilenameOnly = encryptedFilename.slice(12)
-
-      let originalFilename = ''
-      // decrypt filename
-      try {
-        const decryptedFilename = await crypto.subtle.decrypt(
-          { name: 'AES-GCM', iv: filenameiv },
-          cryptoKeyObj,
-          encryptedFilenameOnly
-        )
-        originalFilename = new TextDecoder().decode(decryptedFilename)
-        this.originalFilename.push(originalFilename)
-      } catch (error) {
-        console.error('error during filename decryption: ', error)
-      }
-
-      let decryptedBlob = null
-      // decrypt file and create download URL
-      try {
-        const decryptedData = await crypto.subtle.decrypt(
-          { name: 'AES-GCM', iv: iv },
-          cryptoKeyObj,
-          ciphertext
-        )
-        decryptedBlob = new Blob([decryptedData], {
-          type: 'text/plain',
-        })
-        this.decryptedFileURL.push(URL.createObjectURL(decryptedBlob))
-      } catch (error) {
-        console.error('error during content decryption: ', error)
-      }
-
-      // Return a File object
-      const decryptedFile = new File([decryptedBlob], originalFilename, {
-        type: 'text/plain',
-      })
-      return decryptedFile
     },
 
     async filesList() {
@@ -257,12 +196,15 @@ export default {
         )
 
         // Decrypt File here
-        const decryptedFile = await this.decryptFile(
+        console.log('Decrypting ', file.name, '... ')
+        const decryptedFile = await decryptFile(
+          file.name,
           encryptedFileArrayBuffer,
-          file.name
+          this.cryptoKeyObj
         )
 
         // Download the decrypted file
+        console.log('Downloading ', decryptedFile.name, '... ')
         const url = window.URL.createObjectURL(decryptedFile)
         const a = document.createElement('a')
         a.href = url
