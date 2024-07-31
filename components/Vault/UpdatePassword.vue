@@ -218,43 +218,8 @@ async function downloadAll() {
 async function decryptAll() {
   try {
     const decryptionTasks = downloadedFiles.value.map(async (file) => {
-      // decrypt filename
-      // const encryptedFilenameB64 = file.name.replace(/\.bin$/, '')
-      // const encFNameUInt8Array = fromBase64Url(encryptedFilenameB64)
-      // const encryptedFilename = encFNameUInt8Array.buffer
-
-      // const fileNameiv = encryptedFilename.slice(0, 12)
-      // const encryptedFilenameOnly = encryptedFilename.slice(12)
-
-      // const decryptedFilename = await crypto.subtle.decrypt(
-      //   { name: 'AES-GCM', iv: fileNameiv },
-      //   cryptoKeyObj,
-      //   encryptedFilenameOnly
-      // )
-
-      // // decrypt file content
+      // decrypt all downloaded files
       const fileContentBuffer = base64ToArrayBuffer(file.content)
-      // const separatorIndex = new Uint8Array(fileContentBuffer).indexOf(
-      //   '\n'.charCodeAt(0)
-      // )
-
-      // const ivBuffer = fileContentBuffer.slice(
-      //   separatorIndex + 1,
-      //   separatorIndex + 13
-      // )
-      // const iv = new Uint8Array(ivBuffer)
-      // const ciphertext = fileContentBuffer.slice(separatorIndex + 13)
-
-      // const decryptedData = await crypto.subtle.decrypt(
-      //   { name: 'AES-GCM', iv: iv },
-      //   cryptoKeyObj,
-      //   ciphertext
-      // )
-
-      // return {
-      //   fileName: new TextDecoder().decode(decryptedFilename),
-      //   fileContent: decryptedData,
-      // }
       const decryptedFile = await decryptFile(
         file.name,
         fileContentBuffer,
@@ -346,44 +311,6 @@ async function reencryptAll() {
   // Re-encrypt all downloaded files with the new derived key
   try {
     const encryptionTasks = decryptedFiles.value.map(async (file) => {
-      // const decryptedBlob = new Blob([file.fileContent], {
-      //   type: 'text/plain',
-      // })
-      // const decryptedFile = new File([decryptedBlob], file.fileName, {
-      //   type: 'text/plain',
-      // })
-      // const decryptedFileBuffer = await decryptedFile.arrayBuffer()
-      // const contentiv = crypto.getRandomValues(new Uint8Array(12))
-
-      // // encrypt data using new derived key
-      // const encryptedContent = await crypto.subtle.encrypt(
-      //   { name: 'AES-GCM', iv: contentiv },
-      //   newKey.value,
-      //   decryptedFileBuffer
-      // )
-
-      // // encrypt filename using new derived key
-      // const fileNameBuffer = new TextEncoder().encode(file.fileName)
-      // const fileNameiv = crypto.getRandomValues(new Uint8Array(12))
-      // const encryptedFilename = await crypto.subtle.encrypt(
-      //   { name: 'AES-GCM', iv: fileNameiv },
-      //   newKey.value,
-      //   fileNameBuffer
-      // )
-
-      // const filenameArray = new Uint8Array(encryptedFilename)
-      // const encryptedFilenameB64 = toBase64Url(filenameArray)
-      // const fileNameivB64 = toBase64Url(fileNameiv)
-
-      // const newFileName = fileNameivB64 + encryptedFilenameB64 + '.bin'
-
-      // i++
-      // return {
-      //   fileNameIndex: i,
-      //   fileName: newFileName,
-      //   fileContentiv: contentiv,
-      //   fileContent: encryptedContent,
-      // }
       const encryptedFile = await encryptFile(file, newKey.value)
       console.log('Reencrypted ', file.name)
 
@@ -428,18 +355,6 @@ async function uploadAll() {
 
     for (let i = 0; i < response.uploadUrls.length; i++) {
       console.log('Uploading file ', i, ' = ', reencryptedFiles.value[i].name)
-      // const fileToUpload = new File(
-      //   [
-      //     reencryptedFiles.value[i].fileNameIndex,
-      //     '\n',
-      //     reencryptedFiles.value[i].fileContentiv,
-      //     reencryptedFiles.value[i].fileContent,
-      //   ],
-      //   reencryptedFiles.value[i].fileName,
-      //   {
-      //     type: 'application/octet-stream',
-      //   }
-      // )
 
       // Upload the file to OneDrive using the upload session URL in chunks
       const chunkSize = 1024 * 1024 // 1 MB per chunk
