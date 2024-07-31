@@ -17,8 +17,6 @@ export default defineEventHandler(async (event) => {
   // API key not used
 
   for (const fileName of files) {
-    console.log('upload url for = ', fileName)
-    console.log('to ', cloudFolderName)
     const response = await fetch(
       `https://graph.microsoft.com/v1.0/me/drive/root:/${cloudFolderName}/${fileName}:/createUploadSession`,
       {
@@ -45,7 +43,6 @@ export default defineEventHandler(async (event) => {
 
     const data = await response.json()
     const uploadUrl = data.uploadUrl
-    console.log('upload url = ', uploadUrl)
     uploadUrls.push(uploadUrl)
   }
 
