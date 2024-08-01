@@ -92,17 +92,17 @@
 </template>
 <script>
 import { useVaultStore } from '@/stores/vault'
+import { useFilesStore } from '@/stores/files'
 import { decryptFile, base64ToArrayBuffer } from '~/utils/fileEncryptUtils'
 
 export default {
   data() {
     return {
-      // files: [],
       decryptedFileURL: [],
       originalFilename: [],
       filesToDownload: [],
       // from download.vue
-      files: [],
+      // files: [],
       error: null,
       password: null,
       selectedFile: null,
@@ -123,9 +123,16 @@ export default {
       const vaultStore = useVaultStore()
       return vaultStore.cloudFolderName
     },
+    files() {
+      const filesStore = useFilesStore()
+      return filesStore.files
+    },
   },
-  mounted() {
-    this.filesList()
+  async mounted() {
+    // this.filesList()
+    const filesStore = useFilesStore()
+    await filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
+    await this.filesList()
   },
   methods: {
     downloadSelected() {
@@ -180,23 +187,23 @@ export default {
 
     async filesList() {
       try {
-        const response = await fetch(
-          `https://graph.microsoft.com/v1.0/me/drive/root:/${this.cloudFolderName}:/children`,
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${this.accessToken}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        )
+        // const response = await fetch(
+        //   `https://graph.microsoft.com/v1.0/me/drive/root:/${this.cloudFolderName}:/children`,
+        //   {
+        //     method: 'GET',
+        //     headers: {
+        //       Authorization: `Bearer ${this.accessToken}`,
+        //       'Content-Type': 'application/json',
+        //     },
+        //   }
+        // )
 
-        if (!response.ok) {
-          throw new Error(`Failed to list files: ${response.statusText}`)
-        }
+        // if (!response.ok) {
+        //   throw new Error(`Failed to list files: ${response.statusText}`)
+        // }
 
-        const data = await response.json()
-        this.files = data.value // store list of files
+        // const data = await response.json()
+        // this.files = data.value // store list of files
 
         for (let i = 0; i < this.files.length; i++) {
           const oriFilename = await this.previewFilename(this.files[i].name)
