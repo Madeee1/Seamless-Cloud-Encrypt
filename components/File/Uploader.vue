@@ -66,6 +66,10 @@ export default {
       const vaultStore = useVaultStore()
       return vaultStore.key
     },
+    cloudFolderName() {
+      const vaultStore = useVaultStore()
+      return vaultStore.cloudFolderName
+    },
   },
   methods: {
     async handleFileUpload() {
@@ -108,7 +112,7 @@ export default {
     },
     async uploadFile() {
       const vaultStore = useVaultStore()
-      const cloudFolderName = vaultStore.cloudFolderName
+      const filesStore = useFilesStore()
 
       // Get Upload Urls for each file
       const response = await $fetch('/api/vault/upload', {
@@ -116,7 +120,7 @@ export default {
         body: {
           files: this.fileNames,
           accessToken: this.accessToken,
-          cloudFolderName: cloudFolderName,
+          cloudFolderName: this.cloudFolderName,
         },
       })
 
@@ -165,6 +169,7 @@ export default {
       this.newFilename = []
       this.filesToUpload = []
       this.fileNames = []
+      filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
     },
     toHexString(byteArray) {
       return Array.from(byteArray, function (byte) {

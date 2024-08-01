@@ -7,8 +7,6 @@ export const useFilesStore = defineStore('files', {
   actions: {
     async refreshFilesList(cloudFolderName, accessToken) {
       try {
-        console.log(cloudFolderName)
-        console.log(accessToken)
         const response = await fetch(
           `https://graph.microsoft.com/v1.0/me/drive/root:/${cloudFolderName}:/children`,
           {
