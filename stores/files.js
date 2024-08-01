@@ -29,9 +29,5 @@ export const useFilesStore = defineStore('files', {
         console.error('Error details:', err)
       }
     },
-
-    addFile(file) {
-      this.files.push(file)
-    },
   },
 })

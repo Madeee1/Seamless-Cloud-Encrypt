@@ -40,7 +40,6 @@
 
 <script>
 import { useVaultStore } from '@/stores/vault'
-import { toBase64Url } from '~/utils/encryptionUtils'
 import { encryptFile } from '~/utils/fileEncryptUtils'
 
 export default {
@@ -74,9 +73,6 @@ export default {
   methods: {
     async handleFileUpload() {
       this.files = Array.from(this.$refs.fileInput.files)
-      const vaultStore = useVaultStore()
-
-      const encoder = new TextEncoder()
 
       let errorBoolean = false
       try {
@@ -111,7 +107,6 @@ export default {
       }
     },
     async uploadFile() {
-      const vaultStore = useVaultStore()
       const filesStore = useFilesStore()
 
       // Get Upload Urls for each file
@@ -169,21 +164,8 @@ export default {
       this.newFilename = []
       this.filesToUpload = []
       this.fileNames = []
+      // Refresh files list to include newly uploaded file
       filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
-    },
-    toHexString(byteArray) {
-      return Array.from(byteArray, function (byte) {
-        return ('0' + (byte & 0xff).toString(16)).slice(-2)
-      }).join('')
-    },
-    arrayBufferToBase64(buffer) {
-      let binary = ''
-      const bytes = new Uint8Array(buffer)
-      const len = bytes.byteLength
-      for (let i = 0; i < len; i++) {
-        binary += String.fromCharCode(bytes[i])
-      }
-      return btoa(binary)
     },
   },
 }
