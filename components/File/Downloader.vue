@@ -124,6 +124,9 @@ export default {
       return vaultStore.cloudFolderName
     },
   },
+  mounted() {
+    this.filesList()
+  },
   methods: {
     downloadSelected() {
       if (this.filesToDownload.length > 0) {
