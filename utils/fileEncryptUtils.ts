@@ -40,7 +40,7 @@ export async function encryptFile(
 }
 
 export async function decryptFile(
-  encryptedFilename: String,
+  encryptedFilename: string,
   encryptedFile: ArrayBuffer,
   encryptionKeyObject: CryptoKey
 ): Promise<File> {
@@ -93,4 +93,26 @@ export async function decryptFile(
   return new File([decryptedBlob], originalFilename, {
     type: 'text/plain',
   })
+}
+
+// Array Buffer - Base 64 conversion functions
+
+export function base64ToArrayBuffer(base64: string) {
+  const binaryString = atob(base64)
+  const len = binaryString.length
+  const bytes = new Uint8Array(len)
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i)
+  }
+  return bytes.buffer
+}
+
+export function arrayBufferToBase64(buffer: ArrayBuffer) {
+  let binary = ''
+  const bytes = new Uint8Array(buffer)
+  const len = bytes.byteLength
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i])
+  }
+  return btoa(binary)
 }

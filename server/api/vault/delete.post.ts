@@ -13,12 +13,12 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const { accessToken, fileId } = await readBody(event)
+    const { accessToken, fileName, cloudFolderName } = await readBody(event)
 
     const response = await fetch(
-      `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/content`,
+      `https://graph.microsoft.com/v1.0/me/drive/root:/${cloudFolderName}/${fileName}`,
       {
-        method: 'GET',
+        method: 'DELETE',
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -29,17 +29,10 @@ export default defineEventHandler(async (event) => {
       throw new Error(`Failed to fetch file: ${response.statusText}`)
     }
 
-    const encryptedFilename = response.url.split('/').pop()
-    const encryptedFileBlob = await response.blob()
-    const encryptedFileBuffer = await encryptedFileBlob.arrayBuffer()
-    const encryptedFileBase64 = arrayBufferToBase64(encryptedFileBuffer)
-
     return {
       ok: true,
-      encryptedFilename: encryptedFilename,
-      encryptedBlob: encryptedFileBase64,
     }
   } catch (error) {
-    console.error('Error fetching file from OneDrive:', error)
+    console.error('Error deleting file from OneDrive:', error)
   }
 })

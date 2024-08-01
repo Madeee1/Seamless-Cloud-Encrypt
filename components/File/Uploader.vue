@@ -164,6 +164,7 @@ export default {
       this.encryptedFileURL = []
       this.newFilename = []
       this.filesToUpload = []
+      this.fileNames = []
     },
     toHexString(byteArray) {
       return Array.from(byteArray, function (byte) {

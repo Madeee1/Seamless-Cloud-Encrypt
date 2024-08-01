@@ -6,8 +6,16 @@
       >
         Download the files you have encrypted in the vault
       </h1>
-      <div v-if="confirmPassword">
-        <label for="confirm-password">Confirm Password:</label>
+      <div v-if="confirmPassword" class="mb-3 first-letter:text-third-blue">
+        <label
+          for="confirm-password"
+          class="text-xl font-semibold text-gray-200"
+          >{{
+            deleting
+              ? 'Confirm Password to Delete Files:'
+              : 'Confirm Password to Download Files:'
+          }}</label
+        >
         <input
           id="confirm-password"
           v-model="password"
@@ -15,7 +23,13 @@
           placeholder="Enter vault password"
           class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
         />
-        <UButton class="mx-4 mt-4" @click="confirmDownload">Confirm</UButton>
+        <UButton
+          class="mx-4 mt-4"
+          @click="
+            deleting ? confirmAction('delete') : confirmAction('download')
+          "
+          >Confirm</UButton
+        >
         <br />
         <br />
       </div>
@@ -27,12 +41,20 @@
       Refresh Files List
     </button>
     <br />
-    <button
-      class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4"
-      @click="confirmPassword = true"
-    >
-      Download Selected
-    </button>
+    <div class="flex space-x-5">
+      <button
+        class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4 w-full"
+        @click="(confirmPassword = true), (deleting = false)"
+      >
+        Download
+      </button>
+      <button
+        class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mb-4 w-full"
+        @click="(confirmPassword = true), (deleting = true)"
+      >
+        Delete
+      </button>
+    </div>
     <ul>
       <li
         v-for="file in files"
@@ -70,7 +92,7 @@
 </template>
 <script>
 import { useVaultStore } from '@/stores/vault'
-import { decryptFile } from '~/utils/fileEncryptUtils'
+import { decryptFile, base64ToArrayBuffer } from '~/utils/fileEncryptUtils'
 
 export default {
   data() {
@@ -85,6 +107,7 @@ export default {
       password: null,
       selectedFile: null,
       confirmPassword: false,
+      deleting: false,
     }
   },
   computed: {
@@ -96,12 +119,25 @@ export default {
       const vaultStore = useVaultStore()
       return vaultStore.key
     },
+    cloudFolderName() {
+      const vaultStore = useVaultStore()
+      return vaultStore.cloudFolderName
+    },
   },
   methods: {
     downloadSelected() {
       if (this.filesToDownload.length > 0) {
         for (const file of this.filesToDownload) {
           this.downloadFile(file)
+        }
+      } else {
+        alert('No selected file.')
+      }
+    },
+    deleteSelected() {
+      if (this.filesToDownload.length > 0) {
+        for (const file of this.filesToDownload) {
+          this.deleteFile(file)
         }
       } else {
         alert('No selected file.')
@@ -140,12 +176,9 @@ export default {
     },
 
     async filesList() {
-      const vaultStore = useVaultStore()
-      const cloudFolderName = vaultStore.cloudFolderName
-
       try {
         const response = await fetch(
-          `https://graph.microsoft.com/v1.0/me/drive/root:/${cloudFolderName}:/children`,
+          `https://graph.microsoft.com/v1.0/me/drive/root:/${this.cloudFolderName}:/children`,
           {
             method: 'GET',
             headers: {
@@ -191,7 +224,7 @@ export default {
           throw new Error(`Failed to download file: ${response.statusText}`)
         }
 
-        const encryptedFileArrayBuffer = this.base64ToArrayBuffer(
+        const encryptedFileArrayBuffer = base64ToArrayBuffer(
           response.encryptedBlob
         )
 
@@ -218,6 +251,23 @@ export default {
       }
     },
 
+    async deleteFile(file) {
+      const response = await $fetch('/api/vault/delete', {
+        method: 'POST',
+        body: {
+          accessToken: this.accessToken,
+          fileName: file.name,
+          cloudFolderName: this.cloudFolderName,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete ${file.name}: ${response.statusText}`)
+      }
+
+      console.log(file.name, ' deleted successfully.\n ')
+    },
+
     fromBase64Url(base64UrlString) {
       // Replace URL-safe characters back to their original
       const base64String = base64UrlString.replace(/-/g, '+').replace(/_/g, '/')
@@ -240,17 +290,7 @@ export default {
       return byteArray
     },
 
-    base64ToArrayBuffer(base64) {
-      const binaryString = atob(base64)
-      const len = binaryString.length
-      const bytes = new Uint8Array(len)
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i)
-      }
-      return bytes.buffer
-    },
-
-    async confirmDownload() {
+    async confirmAction(action) {
       const vault = useVaultStore()
       try {
         const response = await $fetch('/api/vault/auth/download', {
@@ -262,10 +302,22 @@ export default {
         })
 
         if (response.ok) {
-          this.downloadSelected()
-          this.confirmPassword = false
-          this.selectedFile = null
-          this.password = null
+          if (action == 'download') {
+            this.downloadSelected()
+            this.confirmPassword = false
+            this.selectedFile = null
+            this.password = null
+          } else if (action == 'delete') {
+            this.deleteSelected()
+            // Refresh after deleting selected files
+            this.filesList()
+            this.deleting = false
+            this.confirmPassword = false
+            this.selectedFile = null
+            this.password = null
+          } else {
+            console.error('Invalid Action')
+          }
         }
       } catch (error) {
         if (!error.response) {
