@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { fromBase64Url } from '@/utils/encryptionUtils'
 
 export const useFilesStore = defineStore('files', {
   state: () => ({
@@ -29,6 +30,27 @@ export const useFilesStore = defineStore('files', {
       } catch (err) {
         this.error = `Error listing files: ${err.message}`
         console.error('Error details:', err)
+      }
+    },
+    async previewFilename(cryptoKeyObj) {
+      for (const file of this.files) {
+        const encryptedFilenameB64 = file.name.replace(/\.bin$/, '')
+        const encFNameUInt8Array = fromBase64Url(encryptedFilenameB64)
+        const encryptedFilenameAndiv = encFNameUInt8Array.buffer
+
+        const fileNameiv = encryptedFilenameAndiv.slice(0, 12)
+        const encryptedFilename = encryptedFilenameAndiv.slice(12)
+
+        try {
+          const decryptedFilename = await crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv: fileNameiv },
+            cryptoKeyObj,
+            encryptedFilename
+          )
+          file.oriFilename = new TextDecoder().decode(decryptedFilename)
+        } catch (error) {
+          file.oriFilename = 'Undecipherable_File.txt'
+        }
       }
     },
   },

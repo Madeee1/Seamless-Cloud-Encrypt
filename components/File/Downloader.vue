@@ -132,7 +132,7 @@ export default {
     // this.filesList()
     const filesStore = useFilesStore()
     await filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
-    await this.filesList()
+    await filesStore.previewFilename(this.cryptoKeyObj)
   },
   methods: {
     downloadSelected() {
@@ -144,18 +144,19 @@ export default {
         alert('No selected file.')
       }
     },
-    deleteSelected() {
+    async deleteSelected() {
       if (this.filesToDownload.length > 0) {
         for (const file of this.filesToDownload) {
-          this.deleteFile(file)
+          await this.deleteFile(file)
         }
       } else {
         alert('No selected file.')
       }
     },
-    refreshFilesList() {
+    async refreshFilesList() {
       const filesStore = useFilesStore()
-      filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
+      await filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
+      await filesStore.previewFilename(this.cryptoKeyObj)
     },
     addFile(file) {
       if (!this.filesToDownload.includes(file)) {
@@ -166,61 +167,61 @@ export default {
         )
       }
     },
-    async previewFilename(filename) {
-      const vaultStore = useVaultStore()
-      const cryptoKeyObj = vaultStore.key
+    // async previewFilename(filename) {
+    //   const vaultStore = useVaultStore()
+    //   const cryptoKeyObj = vaultStore.key
 
-      const encryptedFilenameB64 = filename.replace(/\.bin$/, '')
-      const encFNameUInt8Array = this.fromBase64Url(encryptedFilenameB64)
-      const encryptedFilenameAndiv = encFNameUInt8Array.buffer
+    //   const encryptedFilenameB64 = filename.replace(/\.bin$/, '')
+    //   const encFNameUInt8Array = this.fromBase64Url(encryptedFilenameB64)
+    //   const encryptedFilenameAndiv = encFNameUInt8Array.buffer
 
-      const fileNameiv = encryptedFilenameAndiv.slice(0, 12)
-      const encryptedFilename = encryptedFilenameAndiv.slice(12)
+    //   const fileNameiv = encryptedFilenameAndiv.slice(0, 12)
+    //   const encryptedFilename = encryptedFilenameAndiv.slice(12)
 
-      try {
-        const decryptedFilename = await crypto.subtle.decrypt(
-          { name: 'AES-GCM', iv: fileNameiv },
-          cryptoKeyObj,
-          encryptedFilename
-        )
-        return new TextDecoder().decode(decryptedFilename)
-      } catch (error) {
-        return 'Undecipherable_Filename.txt'
-      }
-    },
+    //   try {
+    //     const decryptedFilename = await crypto.subtle.decrypt(
+    //       { name: 'AES-GCM', iv: fileNameiv },
+    //       cryptoKeyObj,
+    //       encryptedFilename
+    //     )
+    //     return new TextDecoder().decode(decryptedFilename)
+    //   } catch (error) {
+    //     return 'Undecipherable_Filename.txt'
+    //   }
+    // },
 
-    async filesList() {
-      try {
-        // const response = await fetch(
-        //   `https://graph.microsoft.com/v1.0/me/drive/root:/${this.cloudFolderName}:/children`,
-        //   {
-        //     method: 'GET',
-        //     headers: {
-        //       Authorization: `Bearer ${this.accessToken}`,
-        //       'Content-Type': 'application/json',
-        //     },
-        //   }
-        // )
+    // async filesList() {
+    //   try {
+    //     // const response = await fetch(
+    //     //   `https://graph.microsoft.com/v1.0/me/drive/root:/${this.cloudFolderName}:/children`,
+    //     //   {
+    //     //     method: 'GET',
+    //     //     headers: {
+    //     //       Authorization: `Bearer ${this.accessToken}`,
+    //     //       'Content-Type': 'application/json',
+    //     //     },
+    //     //   }
+    //     // )
 
-        // if (!response.ok) {
-        //   throw new Error(`Failed to list files: ${response.statusText}`)
-        // }
+    //     // if (!response.ok) {
+    //     //   throw new Error(`Failed to list files: ${response.statusText}`)
+    //     // }
 
-        // const data = await response.json()
-        // this.files = data.value // store list of files
-        console.log('Processing files list for filenames preview.')
+    //     // const data = await response.json()
+    //     // this.files = data.value // store list of files
+    //     console.log('Processing files list for filenames preview.')
 
-        for (let i = 0; i < this.files.length; i++) {
-          const oriFilename = await this.previewFilename(this.files[i].name)
-          console.log('Processed ', oriFilename)
+    //     for (let i = 0; i < this.files.length; i++) {
+    //       const oriFilename = await this.previewFilename(this.files[i].name)
+    //       console.log('Processed ', oriFilename)
 
-          this.files[i].oriFilename = oriFilename
-        }
-      } catch (err) {
-        this.error = `Error listing files: ${err.message}`
-        console.error('Error details:', err)
-      }
-    },
+    //       this.files[i].oriFilename = oriFilename
+    //     }
+    //   } catch (err) {
+    //     this.error = `Error listing files: ${err.message}`
+    //     console.error('Error details:', err)
+    //   }
+    // },
 
     async downloadFile(file) {
       try {
@@ -324,10 +325,14 @@ export default {
             this.selectedFile = null
             this.password = null
           } else if (action == 'delete') {
-            this.deleteSelected()
+            await this.deleteSelected()
             // Refresh after deleting selected files
             const filesStore = useFilesStore()
-            filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
+            await filesStore.refreshFilesList(
+              this.cloudFolderName,
+              this.accessToken
+            )
+            await filesStore.previewFilename(this.cryptoKeyObj)
             this.deleting = false
             this.confirmPassword = false
             this.selectedFile = null

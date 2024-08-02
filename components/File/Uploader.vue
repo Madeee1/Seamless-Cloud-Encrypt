@@ -165,7 +165,8 @@ export default {
       this.filesToUpload = []
       this.fileNames = []
       // Refresh files list to include newly uploaded file
-      filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
+      await filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
+      await filesStore.previewFilename(this.cryptoKeyObj)
     },
   },
 }
