@@ -102,7 +102,6 @@ export default {
       originalFilename: [],
       filesToDownload: [],
       // from download.vue
-      // files: [],
       error: null,
       password: null,
       selectedFile: null,
@@ -167,61 +166,6 @@ export default {
         )
       }
     },
-    // async previewFilename(filename) {
-    //   const vaultStore = useVaultStore()
-    //   const cryptoKeyObj = vaultStore.key
-
-    //   const encryptedFilenameB64 = filename.replace(/\.bin$/, '')
-    //   const encFNameUInt8Array = this.fromBase64Url(encryptedFilenameB64)
-    //   const encryptedFilenameAndiv = encFNameUInt8Array.buffer
-
-    //   const fileNameiv = encryptedFilenameAndiv.slice(0, 12)
-    //   const encryptedFilename = encryptedFilenameAndiv.slice(12)
-
-    //   try {
-    //     const decryptedFilename = await crypto.subtle.decrypt(
-    //       { name: 'AES-GCM', iv: fileNameiv },
-    //       cryptoKeyObj,
-    //       encryptedFilename
-    //     )
-    //     return new TextDecoder().decode(decryptedFilename)
-    //   } catch (error) {
-    //     return 'Undecipherable_Filename.txt'
-    //   }
-    // },
-
-    // async filesList() {
-    //   try {
-    //     // const response = await fetch(
-    //     //   `https://graph.microsoft.com/v1.0/me/drive/root:/${this.cloudFolderName}:/children`,
-    //     //   {
-    //     //     method: 'GET',
-    //     //     headers: {
-    //     //       Authorization: `Bearer ${this.accessToken}`,
-    //     //       'Content-Type': 'application/json',
-    //     //     },
-    //     //   }
-    //     // )
-
-    //     // if (!response.ok) {
-    //     //   throw new Error(`Failed to list files: ${response.statusText}`)
-    //     // }
-
-    //     // const data = await response.json()
-    //     // this.files = data.value // store list of files
-    //     console.log('Processing files list for filenames preview.')
-
-    //     for (let i = 0; i < this.files.length; i++) {
-    //       const oriFilename = await this.previewFilename(this.files[i].name)
-    //       console.log('Processed ', oriFilename)
-
-    //       this.files[i].oriFilename = oriFilename
-    //     }
-    //   } catch (err) {
-    //     this.error = `Error listing files: ${err.message}`
-    //     console.error('Error details:', err)
-    //   }
-    // },
 
     async downloadFile(file) {
       try {
