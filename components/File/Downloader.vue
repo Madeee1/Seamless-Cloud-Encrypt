@@ -30,6 +30,11 @@
           "
           >Confirm</UButton
         >
+        <UButton
+          class="bg-red-500 hover:bg-red-700 mx-4 mt-4"
+          @click="(confirmPassword = false), (password = null)"
+          >Cancel</UButton
+        >
         <br />
         <br />
       </div>
