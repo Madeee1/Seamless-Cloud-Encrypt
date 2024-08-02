@@ -36,7 +36,7 @@
     </div>
     <button
       class="block w-1/6 text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded mb-4"
-      @click="filesList"
+      @click="refreshFilesList"
     >
       Refresh Files List
     </button>
@@ -153,6 +153,10 @@ export default {
         alert('No selected file.')
       }
     },
+    refreshFilesList() {
+      const filesStore = useFilesStore()
+      filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
+    },
     addFile(file) {
       if (!this.filesToDownload.includes(file)) {
         this.filesToDownload.push(file)
@@ -204,9 +208,11 @@ export default {
 
         // const data = await response.json()
         // this.files = data.value // store list of files
+        console.log('Processing files list for filenames preview.')
 
         for (let i = 0; i < this.files.length; i++) {
           const oriFilename = await this.previewFilename(this.files[i].name)
+          console.log('Processed ', oriFilename)
 
           this.files[i].oriFilename = oriFilename
         }
@@ -320,7 +326,8 @@ export default {
           } else if (action == 'delete') {
             this.deleteSelected()
             // Refresh after deleting selected files
-            this.filesList()
+            const filesStore = useFilesStore()
+            filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
             this.deleting = false
             this.confirmPassword = false
             this.selectedFile = null
