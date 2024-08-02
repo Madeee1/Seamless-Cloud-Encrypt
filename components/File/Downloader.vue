@@ -268,6 +268,8 @@ export default {
             this.confirmPassword = false
             this.selectedFile = null
             this.password = null
+            // Clear array for consecutive downloads
+            this.filesToDownload = []
           } else if (action == 'delete') {
             await this.deleteSelected()
             // Refresh after deleting selected files
@@ -281,6 +283,8 @@ export default {
             this.confirmPassword = false
             this.selectedFile = null
             this.password = null
+            // Clear array for consecutive deletions
+            this.filesToDownload = []
           } else {
             console.error('Invalid Action')
           }
