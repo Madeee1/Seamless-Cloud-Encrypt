@@ -61,7 +61,7 @@
         :key="file.id"
         class="flex items-center justify-between bg-gray-100 p-2 rounded mb-2 gap-2"
       >
-        <input type="checkbox" @change="addFile(file)" />
+        <input v-model="selectedFiles" type="checkbox" :value="file" />
         <div class="flex items-center">
           <img
             v-if="file.thumbnailUrl"
@@ -100,11 +100,10 @@ export default {
     return {
       decryptedFileURL: [],
       originalFilename: [],
-      filesToDownload: [],
+      selectedFiles: [],
       // from download.vue
       error: null,
       password: null,
-      selectedFile: null,
       confirmPassword: false,
       deleting: false,
     }
@@ -135,36 +134,29 @@ export default {
   },
   methods: {
     downloadSelected() {
-      if (this.filesToDownload.length > 0) {
-        for (const file of this.filesToDownload) {
+      if (this.selectedFiles.length > 0) {
+        for (const file of this.selectedFiles) {
           this.downloadFile(file)
         }
       } else {
         alert('No selected file.')
       }
     },
+
     async deleteSelected() {
-      if (this.filesToDownload.length > 0) {
-        for (const file of this.filesToDownload) {
+      if (this.selectedFiles.length > 0) {
+        for (const file of this.selectedFiles) {
           await this.deleteFile(file)
         }
       } else {
         alert('No selected file.')
       }
     },
+
     async refreshFilesList() {
       const filesStore = useFilesStore()
       await filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
       await filesStore.previewFilename(this.cryptoKeyObj)
-    },
-    addFile(file) {
-      if (!this.filesToDownload.includes(file)) {
-        this.filesToDownload.push(file)
-      } else {
-        this.filesToDownload = this.filesToDownload.filter(
-          (element) => element !== file
-        )
-      }
     },
 
     async downloadFile(file) {
@@ -266,10 +258,9 @@ export default {
           if (action == 'download') {
             this.downloadSelected()
             this.confirmPassword = false
-            this.selectedFile = null
             this.password = null
             // Clear array for consecutive downloads
-            this.filesToDownload = []
+            this.selectedFiles = []
           } else if (action == 'delete') {
             await this.deleteSelected()
             // Refresh after deleting selected files
@@ -281,10 +272,9 @@ export default {
             await filesStore.previewFilename(this.cryptoKeyObj)
             this.deleting = false
             this.confirmPassword = false
-            this.selectedFile = null
             this.password = null
             // Clear array for consecutive deletions
-            this.filesToDownload = []
+            this.selectedFiles = []
           } else {
             console.error('Invalid Action')
           }
@@ -293,17 +283,14 @@ export default {
         if (!error.response) {
           alert('Network error, try again later!')
           this.confirmPassword = false
-          this.selectedFile = null
           this.password = null
         } else if (error.response.status === 401) {
           alert('Wrong password, try again!')
           this.confirmPassword = false
-          this.selectedFile = null
           this.password = null
         } else if (error.response.status === 500) {
           alert('Server error, try again later!')
           this.confirmPassword = false
-          this.selectedFile = null
           this.password = null
         }
       }
