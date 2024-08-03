@@ -1,8 +1,9 @@
 <template>
-  <div class="flex flex-col gap-8">
+  <div class="flex flex-col gap-4">
     <FileUploader />
     <FileDownloader />
-    <VaultAutoLock />
+    <TimerAutoLock />
+    <TimerRefreshToken />
   </div>
 </template>
 
@@ -10,7 +11,6 @@
 definePageMeta({
   title: 'Vault',
   description: 'Vault',
-  // layout: 'vault',
-  middleware: 'vault-auth',
+  layout: 'vault',
 })
 </script>

@@ -1,52 +1,86 @@
 <template>
-  <div class="my-2">
-    <h1 class="text-3xl font-bold text-gray-800 mb-6">Update Password</h1>
-    <UButton
-      class="text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-      @click="confirmPassword = true"
-    >
-      Change Password
-    </UButton>
-    <div v-if="confirmPassword">
-      <label for="confirm-password">Confirm Password:</label>
-      <input
-        id="confirm-password"
-        v-model="passwordConfirmation"
-        type="password"
-        placeholder="Enter vault password"
-        class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-      />
-    </div>
-    <div v-if="confirmPassword">
-      <label for="new-password">New Password:</label>
-      <input
-        id="new-password"
-        v-model="newPassword"
-        type="password"
-        placeholder="Enter new password"
-        class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-      />
-    </div>
-    <div v-if="confirmPassword">
-      <label for="confirm-new-password">Confirm New Password:</label>
-      <input
-        id="confirm-new-password"
-        v-model="newPasswordConfirmation"
-        type="password"
-        placeholder="Enter new password again"
-        class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-      />
-      <UButton class="mx-4 mt-4" @click="confirmUpdate">Confirm</UButton>
-      <UButton
-        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-        @click="confirmPassword = false"
-        >Cancel</UButton
+  <div class="flex flex-col h-full px-4">
+    <div class="w-full px-8 space-y-2">
+      <h1
+        class="text-3xl font-semibold text-gray-200 first-letter:text-third-blue"
       >
+        Update <span class="text-third-blue">V</span>ault's
+        <span class="text-third-blue">P</span>assword
+      </h1>
+      <UButton
+        class="block w-1/6 text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded"
+        @click="confirmPassword = true"
+      >
+        Change Password
+      </UButton>
+      <div v-if="confirmPassword" class="mb-3 first-letter:text-third-blue">
+        <label
+          for="confirm-password"
+          class="text-xl font-semibold text-gray-200"
+          >Enter Password</label
+        >
+        <input
+          id="confirm-password"
+          v-model="passwordConfirmation"
+          type="password"
+          placeholder="Enter Vault's Password"
+          class="w-full px-4 py-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+      <div v-if="confirmPassword" class="mb-3 first-letter:text-third-blue">
+        <label for="new-password" class="text-xl font-semibold text-gray-200"
+          >New Password</label
+        >
+        <input
+          id="new-password"
+          v-model="newPassword"
+          type="password"
+          placeholder="Enter New Vault's Password"
+          class="w-full px-4 py-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+      <div v-if="confirmPassword" class="mb-3 first-letter:text-third-blue">
+        <label
+          for="confirm-new-password"
+          class="text-xl font-semibold text-gray-200"
+          >Confirm New Password</label
+        >
+        <input
+          id="confirm-new-password"
+          v-model="newPasswordConfirmation"
+          type="password"
+          placeholder="Re-enter New Vault's Password"
+          class="w-full px-4 py-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+      <div v-if="confirmPassword" class="pt-5 flex justify-end space-x-2">
+        <UButton
+          class="block text-center w-1/6 text-lg font-semibold bg-white hover:bg-gray-200 text-second-blue py-1 px-2 rounded"
+          @click="confirmPassword = false"
+          >Cancel</UButton
+        ><UButton
+          class="block text-center w-1/6 text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded"
+          @click="confirmUpdate"
+          >Confirm</UButton
+        >
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import {
+  encrypt,
+  decrypt,
+  deriveKeyFromPassword,
+  toBase64Url,
+  fromBase64Url,
+} from '~/utils/encryptionUtils'
+import {
+  encryptFile,
+  decryptFile,
+  base64ToArrayBuffer,
+} from '~/utils/fileEncryptUtils'
 import bcrypt from 'bcryptjs'
 
 const supabase = useSupabaseClient()
@@ -56,46 +90,19 @@ const vault = useVaultStore()
 
 const cryptoKeyObj = vault.key
 const confirmPassword = ref(false)
-const accessToken = sessionStorage.getItem('access_token') || null
+const accessToken = vault.cloudAccessToken
+const cloudFolderName = vault.cloudFolderName
 const passwordConfirmation = ref('')
 const newPassword = ref('')
 const newPasswordConfirmation = ref('')
 const newKey = ref(null)
-const downloadedFiles = ref(null)
+const newAccessToken = ref(null)
+const newRefreshToken = ref(null)
+const downloadedFiles = ref([])
+const downloadedFileNames = ref([])
 const decryptedFiles = ref([])
 const reencryptedFiles = ref([])
-
-function base64ToArrayBuffer(base64) {
-  const binaryString = atob(base64)
-  const len = binaryString.length
-  const bytes = new Uint8Array(len)
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i)
-  }
-  return bytes.buffer
-}
-
-function fromBase64Url(base64UrlString) {
-  // Replace URL-safe characters back to their original
-  const base64String = base64UrlString.replace(/-/g, '+').replace(/_/g, '/')
-
-  // Pad the base64 string to make its length a multiple of 4
-  const paddedBase64String = base64String.padEnd(
-    base64String.length + ((4 - (base64String.length % 4)) % 4),
-    '='
-  )
-
-  // Decode base64 string to a UTF-16 string
-  const decodedString = window.atob(paddedBase64String)
-
-  // Convert decoded string to byte array
-  const byteArray = new Uint8Array(decodedString.length)
-  for (let i = 0; i < decodedString.length; i++) {
-    byteArray[i] = decodedString.charCodeAt(i)
-  }
-
-  return byteArray
-}
+const reencryptedFileNames = ref([])
 
 async function confirmUpdate() {
   try {
@@ -132,7 +139,11 @@ async function confirmUpdate() {
       console.log('Deleting Old Files... ')
       await deleteAll()
 
-      // 7. Update the hashed password attribute in the database
+      // 7. Update access token and refresh token
+      console.log('Updating Access Tokens... ')
+      await updateAccessTokens()
+
+      // 8. Update the hashed password attribute in the database
       console.log('Updating Database Password... ')
       await updatePassword()
     } else {
@@ -145,20 +156,23 @@ async function confirmUpdate() {
     } else if (error.response.status === 401) {
       alert('Wrong password, try again!')
     } else if (error.response.status === 500) {
+      console.error(error)
       alert('Server error, try again later!')
     }
   }
 }
 
 async function updatePassword() {
-  // Update supabase hashed password
+  // Update supabase hashed password, access token, and refresh token
   const saltRounds = 10
   const hashPass = await bcrypt.hash(newPassword.value, saltRounds)
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('vault')
     .update({
       hashed_password: hashPass,
+      enc_cloud_access_token: newAccessToken.value,
+      enc_cloud_refresh_token: newRefreshToken.value,
     })
     .eq('id', vault.id)
     .eq('user_id', user.value.id)
@@ -167,26 +181,71 @@ async function updatePassword() {
   if (error) {
     console.error(error)
   } else {
+    console.log(data)
+    vault.$patch({
+      name: data[0].name,
+    })
     console.log('Vault password updated successfully.\n ')
+    // vault.key = newKey.value
     alert('Vault password update successfull, vault will be locked now.')
     navigateTo('/dashboard')
   }
 }
 
 async function downloadAll() {
-  // Download all current uploaded files from onedrive
-  const response = await $fetch('/api/vault/downloadAll', {
-    method: 'POST',
-    body: {
-      accessToken: accessToken,
-    },
-  })
+  // Get folder id to download all files inside
+  const folderId = await getFolderIdByName()
 
-  if (!response.ok) {
-    throw new Error(`Failed to list files: ${response.statusText}`)
+  // Get list of files using folder id
+  const folderResponse = await fetch(
+    `https://graph.microsoft.com/v1.0/me/drive/items/${folderId}/children`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  )
+
+  if (!folderResponse.ok) {
+    throw new Error(
+      `Failed to get folder contents: ${folderResponse.statusText}`
+    )
   }
 
-  downloadedFiles.value = response.files
+  const folderData = await folderResponse.json()
+
+  // Download all files from the list of files
+  for (const item of folderData.value) {
+    if (item.file) {
+      // Ensure it's a file
+      const fileResponse = await fetch(
+        `https://graph.microsoft.com/v1.0/me/drive/items/${item.id}/content`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+
+      if (!fileResponse.ok) {
+        throw new Error(
+          `Failed to download file: ${item.name} - ${fileResponse.statusText}`
+        )
+      }
+
+      const encryptedFilename = item.name
+      const encryptedFileBlob = await fileResponse.blob()
+      const encryptedFileBuffer = await encryptedFileBlob.arrayBuffer()
+      downloadedFiles.value.push({
+        name: encryptedFilename,
+        content: encryptedFileBuffer,
+      })
+      downloadedFileNames.value.push(encryptedFilename)
+    }
+  }
 
   console.log('All files downloaded successfully.\n ')
 }
@@ -194,49 +253,22 @@ async function downloadAll() {
 async function decryptAll() {
   try {
     const decryptionTasks = downloadedFiles.value.map(async (file) => {
-      // decrypt filename
-      const encryptedFilenameB64 = file.name.replace(/\.bin$/, '')
-      const encFNameUInt8Array = fromBase64Url(encryptedFilenameB64)
-      const encryptedFilename = encFNameUInt8Array.buffer
-
-      const fileNameiv = encryptedFilename.slice(0, 12)
-      const encryptedFilenameOnly = encryptedFilename.slice(12)
-
-      const decryptedFilename = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: fileNameiv },
-        cryptoKeyObj,
-        encryptedFilenameOnly
+      // decrypt all downloaded files
+      const decryptedFile = await decryptFile(
+        file.name,
+        file.content,
+        cryptoKeyObj
       )
 
-      // decrypt file content
-      const fileContentBuffer = base64ToArrayBuffer(file.content)
-      const separatorIndex = new Uint8Array(fileContentBuffer).indexOf(
-        '\n'.charCodeAt(0)
-      )
-
-      const ivBuffer = fileContentBuffer.slice(
-        separatorIndex + 1,
-        separatorIndex + 13
-      )
-      const iv = new Uint8Array(ivBuffer)
-      const ciphertext = fileContentBuffer.slice(separatorIndex + 13)
-
-      const decryptedData = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: iv },
-        cryptoKeyObj,
-        ciphertext
-      )
-
-      return {
-        fileName: new TextDecoder().decode(decryptedFilename),
-        fileContent: decryptedData,
-      }
+      console.log('Decrypted: ', decryptedFile.name)
+      return decryptedFile
     })
 
     const decryptedFilesResults = await Promise.all(decryptionTasks)
     decryptedFiles.value = decryptedFilesResults.filter((file) => file !== null)
     console.log('All files decrypted successfully.\n ')
   } catch (error) {
+    console.error(error)
     throw new Error('Error during files decryption: ', error)
   }
 }
@@ -247,7 +279,8 @@ async function deleteAll() {
     method: 'POST',
     body: {
       accessToken: accessToken,
-      downloadedFiles: downloadedFiles.value,
+      downloadedFiles: downloadedFileNames.value,
+      cloudFolderName: cloudFolderName,
     },
   })
 
@@ -258,84 +291,64 @@ async function deleteAll() {
   console.log('All files deleted successfully.\n ')
 }
 
-async function deriveKeyFromPassword(password) {
-  const salt = new Uint8Array([1, 2, 3, 4])
-  const encoder = new TextEncoder()
-  const encodedPassword = encoder.encode(password)
+async function updateAccessTokens() {
+  // Move to backend?
+  // Get current encrypted access and refresh tokens
+  const { data: accessTokens, error: vaultError } = await supabase
+    .from('vault')
+    .select('enc_cloud_access_token, enc_cloud_refresh_token')
+    .eq('id', vault.id)
+    .eq('user_id', user.value.id)
+    .single()
 
-  // Import key here is used to set the "structure" of the key
-  const derivedKey = await crypto.subtle.importKey(
-    'raw',
-    encodedPassword,
-    { name: 'PBKDF2' },
-    false,
-    ['deriveKey']
-  )
-  const key = await crypto.subtle.deriveKey(
-    {
-      name: 'PBKDF2',
-      salt: salt,
-      iterations: 110000,
-      hash: 'SHA-256',
-    },
-    derivedKey,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['encrypt', 'decrypt']
-  )
+  if (vaultError) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Internal Server Error',
+    })
+  }
 
-  console.log('Key derived successfully.\n ')
-  return key
+  try {
+    // Decrypt access token
+    const decryptedAccessToken = await decrypt(
+      accessTokens.enc_cloud_access_token,
+      cryptoKeyObj
+    )
+
+    // Decrypt refresh token
+    const decryptedRefreshToken = await decrypt(
+      accessTokens.enc_cloud_refresh_token,
+      cryptoKeyObj
+    )
+
+    // Reencrypt access token
+    const reencryptedAccessToken = await encrypt(
+      decryptedAccessToken,
+      newKey.value
+    )
+    newAccessToken.value = reencryptedAccessToken
+
+    // Reencrypt refresh token
+    const reencryptedRefreshToken = await encrypt(
+      decryptedRefreshToken,
+      newKey.value
+    )
+    newRefreshToken.value = reencryptedRefreshToken
+
+    console.log('Access Token and Refresh Token updated successfully.\n ')
+  } catch (error) {
+    throw new Error('Error during access tokens update.')
+  }
 }
 
 async function reencryptAll() {
   // Re-encrypt all downloaded files with the new derived key
   try {
-    // File index to be deprecated
-    // Added to prevent error during decryption process
-    let i = 0
-
     const encryptionTasks = decryptedFiles.value.map(async (file) => {
-      const decryptedBlob = new Blob([file.fileContent], {
-        type: 'text/plain',
-      })
-      const decryptedFile = new File([decryptedBlob], file.fileName, {
-        type: 'text/plain',
-      })
-      const decryptedFileBuffer = await decryptedFile.arrayBuffer()
-      const contentiv = crypto.getRandomValues(new Uint8Array(12))
+      const encryptedFile = await encryptFile(file, newKey.value)
+      console.log('Reencrypted ', file.name)
 
-      // encrypt data using new derived key
-      const encryptedContent = await crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv: contentiv },
-        newKey.value,
-        decryptedFileBuffer
-      )
-
-      // encrypt filename using new derived key
-      const fileNameBuffer = new TextEncoder().encode(file.fileName)
-      const fileNameiv = crypto.getRandomValues(new Uint8Array(12))
-      const encryptedFilename = await crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv: fileNameiv },
-        newKey.value,
-        fileNameBuffer
-      )
-
-      const filenameArray = new Uint8Array(encryptedFilename)
-      const encryptedFilenameB64 = toBase64Url(filenameArray)
-      const fileNameivB64 = toBase64Url(fileNameiv)
-
-      const newFileName = fileNameivB64 + encryptedFilenameB64 + '.bin'
-      const fileContentivB64 = arrayBufferToBase64(contentiv)
-      const fileContentB64 = arrayBufferToBase64(encryptedContent)
-
-      i++
-      return {
-        fileNameIndex: i,
-        fileName: newFileName,
-        fileContentiv: fileContentivB64,
-        fileContent: fileContentB64,
-      }
+      return encryptedFile
     })
 
     const reencryptedFilesResults = await Promise.all(encryptionTasks)
@@ -343,8 +356,13 @@ async function reencryptAll() {
       (file) => file !== null
     )
 
+    for (let i = 0; i < reencryptedFiles.value.length; i++) {
+      reencryptedFileNames.value.push(reencryptedFiles.value[i].name)
+    }
+
     console.log('All files re-encrypted successfully.\n ')
   } catch (error) {
+    console.error(error)
     throw new Error('Error during files encryption: ', error)
   }
 }
@@ -360,43 +378,77 @@ async function uploadAll() {
       method: 'POST',
       body: {
         accessToken: accessToken,
-        files: reencryptedFiles.value,
+        files: reencryptedFileNames.value,
+        cloudFolderName: cloudFolderName,
       },
     })
 
     if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(
-        `Failed to upload file: ${response.statusText} - ${errorText}`
-      )
+      throw new Error('Error in uploading files.')
+    }
+
+    for (let i = 0; i < response.uploadUrls.length; i++) {
+      console.log('Uploading file ', i, ' = ', reencryptedFiles.value[i].name)
+
+      // Upload the file to OneDrive using the upload session URL in chunks
+      const chunkSize = 1024 * 1024 // 1 MB per chunk
+      let start = 0
+
+      while (start < reencryptedFiles.value[i].size) {
+        console.log('Uploading chunks')
+        const end = Math.min(start + chunkSize, reencryptedFiles.value[i].size)
+        const chunk = reencryptedFiles.value[i].slice(start, end)
+
+        const uploadResponse = await fetch(response.uploadUrls[i], {
+          method: 'PUT',
+          headers: {
+            'Content-Range': `bytes ${start}-${end - 1}/${reencryptedFiles.value[i].size}`,
+          },
+          body: chunk,
+        })
+
+        if (!uploadResponse.ok && uploadResponse.status !== 308) {
+          const errorText = await uploadResponse.text()
+          throw new Error(
+            `Failed to upload file: ${uploadResponse.status} - ${errorText}`
+          )
+        }
+
+        start = end
+      }
     }
 
     console.log('All files uploaded successfully.\n ')
   } catch (err) {
-    console.error('Error details:', err)
+    console.error('Error during files upload.')
   }
 }
 
-function toBase64Url(byteArray) {
-  // Convert byteArray to a standard base64 string
-  const base64String = window.btoa(String.fromCharCode.apply(null, byteArray))
+async function getFolderIdByName() {
+  const response = await fetch(
+    'https://graph.microsoft.com/v1.0/me/drive/root/children',
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  )
 
-  // Make the base64 string URL and filename safe
-  const base64UrlString = base64String
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '')
-
-  return base64UrlString
-}
-
-function arrayBufferToBase64(buffer) {
-  let binary = ''
-  const bytes = new Uint8Array(buffer)
-  const len = bytes.byteLength
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i])
+  if (!response.ok) {
+    throw new Error(`Failed to list folder contents: ${response.statusText}`)
   }
-  return btoa(binary)
+
+  const data = await response.json()
+  const folder = data.value.find(
+    (folder) => folder.name === cloudFolderName && folder.folder
+  )
+
+  if (!folder) {
+    throw new Error(`Folder not found: ${cloudFolderName}`)
+  }
+
+  return folder.id
 }
 </script>

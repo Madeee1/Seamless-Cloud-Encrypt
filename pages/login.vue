@@ -1,46 +1,76 @@
 <template>
-  <div>
-    <UCard class="w-[450px] mx-auto mt-8 rounded-2xl">
-      <template #header>
-        <!-- Use Tab to see whether user Signs up or Login -->
-        <UTabs v-model="selectedTab" :items="items" />
-      </template>
-      <UForm
-        :schema="schema"
-        :state="state"
-        class="space-y-4"
-        @submit="onSubmit"
-      >
-        <UFormGroup label="Email" name="email" class="h-[80px]">
-          <UInput v-model="state.email" placeholder="example@example.com" />
-        </UFormGroup>
-
-        <UFormGroup label="Password" name="password" class="h-[80px]">
-          <UInput
-            v-model="state.password"
-            type="password"
-            placeholder="StrongP@ssword101"
+  <div class="flex flex-col min-h-screen bg-main-blue">
+    <div>
+      <UCard class="w-[480px] mx-auto mt-8 rounded-xl bg-gray-200">
+        <template #header>
+          <UButton
+            class="mb-1"
+            color="blue"
+            variant="ghost"
+            size="md"
+            icon="i-heroicons-x-mark"
+            @click="navigateTo('/')"
           />
-        </UFormGroup>
+          <!-- Use Tab to see whether user Signs up or Login -->
+          <UTabs v-model="selectedTab" :items="items">
+            <template #default="{ item, selected }">
+              <span
+                class="truncate"
+                :class="[selected && 'text-third-blue font-bold']"
+                >{{ item.label }}</span
+              >
+            </template>
+          </UTabs>
+        </template>
+        <UForm
+          :schema="schema"
+          :state="state"
+          class="space-y-3"
+          @submit="onSubmit"
+        >
+          <UFormGroup label="Email" name="email" size="xl">
+            <UInput
+              v-model="state.email"
+              placeholder="example@example.com"
+              color="blue"
+            />
+          </UFormGroup>
 
-        <div class="text-left mt-2">
-          <a
-            href="/forgot-password"
-            class="text-blue-500 hover: underline"
-            @click.prevent="toForgotPassword"
-          >
-            Forgot Password?
-          </a>
-        </div>
+          <UFormGroup label="Password" name="password" size="xl">
+            <UInput
+              v-model="state.password"
+              type="password"
+              color="blue"
+              placeholder="StrongP@ssword101"
+            />
+          </UFormGroup>
 
-        <div class="flex">
-          <UButton type="submit"> Submit </UButton>
-          <span class="text-red-500 ml-2 text-sm my-auto">
-            {{ errorMessage }}
-          </span>
-        </div>
-      </UForm>
-    </UCard>
+          <div class="text-left mt-2">
+            <a
+              href="/forgot-password"
+              class="text-blue-500 hover: underline"
+              @click.prevent="toForgotPassword"
+            >
+              Forgot Password?
+            </a>
+          </div>
+
+          <div class="flex">
+            <UButton
+              type="submit"
+              class="block w-full text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded"
+            >
+              Submit
+            </UButton>
+          </div>
+          <div class="flex">
+            <span class="text-red-500 ml-2 text-md">
+              {{ errorMessage }}
+            </span>
+          </div>
+        </UForm>
+      </UCard>
+    </div>
   </div>
 </template>
 
@@ -108,7 +138,7 @@ function toForgotPassword() {
 }
 
 // Login or signup functionality
-const items = [{ label: 'Sign up' }, { label: 'Login' }]
+const items = [{ label: 'Sign up' }, { key: 'login', label: 'Login' }]
 const route = useRoute()
 const router = useRouter()
 

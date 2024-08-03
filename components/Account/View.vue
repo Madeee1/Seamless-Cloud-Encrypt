@@ -1,35 +1,48 @@
 <template>
-  <div class="max-w-lg mx-auto my-10">
-    <h1 class="text-2xl font-bold text-center mb-6">Account</h1>
-    <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-      <form>
-        <div class="mb-4">
-          <label class="block text-gray-700 text-sm font-bold mb-2"
-            >Email:</label
-          >
-          <input
-            v-model="userEmail"
-            type="text"
-            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-          <UButton class="mt-4" @click="updateAccountEmail">
-            Update Email
-          </UButton>
-        </div>
-        <div class="mb-6">
-          <label class="block text-gray-700 text-sm font-bold mb-2"
-            >Password:</label
-          >
-          <input
-            v-model="userPassword"
-            type="password"
-            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
-          />
-          <UButton class="mt-4" @click="updateAccountPass">
-            Update Password
-          </UButton>
-        </div>
-      </form>
+  <div class="flex flex-col h-full px-4">
+    <div class="w-full px-8 py-2 space-y-2">
+      <h1
+        class="text-3xl font-semibold text-gray-200 first-letter:text-third-blue"
+      >
+        Edit <span class="text-third-blue">A</span>ccount
+      </h1>
+      <div class="">
+        <form>
+          <div class="mb-3 first-letter:text-third-blue">
+            <label class="text-xl font-semibold text-gray-200">Email</label>
+            <input
+              v-model="userEmail"
+              type="text"
+              class="rounded w-full py-2 px-3 text-gray-700"
+            />
+            <div class="pt-3 flex justify-end">
+              <UButton
+                class="block w-1/6 text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded"
+                @click="updateAccountEmail"
+              >
+                Update Email
+              </UButton>
+            </div>
+          </div>
+          <div class="mb-3 first-letter:text-third-blue">
+            <label class="text-xl font-semibold text-gray-200">Password</label>
+            <input
+              v-model="userPassword"
+              type="password"
+              placeholder="Enter New Password"
+              class="rounded w-full py-2 px-3 text-gray-700"
+            />
+            <div class="pt-3 flex justify-end">
+              <UButton
+                class="block w-1/6 text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded"
+                @click="updateAccountPass"
+              >
+                Update Password
+              </UButton>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </template>

@@ -1,47 +1,46 @@
 <template>
-  <div class="flex flex-col gap-4">
-    <div>
-      <p class="text-lg font-semibold">
-        Upload files you want to encrypt upload here
+  <div class="flex flex-col h-full px-4">
+    <div class="w-full px-8 py-2 space-y-2">
+      <p
+        class="text-2xl font-semibold text-gray-200 first-letter:text-third-blue"
+      >
+        Upload the files you want to encrypt here
       </p>
       <input
+        id="file-input"
         ref="fileInput"
         type="file"
         multiple
-        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+        class="block w-full text-lg text-gray-300 file:mr-5 file:w-1/6 file:py-1 file:px-2 file:rounded file:border-0 file:font-semibold file:bg-blue-500 file:text-gray-200 hover:file:bg-blue-700"
         @change="handleFileUpload"
       />
     </div>
-    <div
-      v-if="error"
-      class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
-      role="alert"
-    >
-      <strong class="font-bold">Error:</strong>
-      <span class="block sm:inline">{{ error }}</span>
-    </div>
-    <div
-      v-if="uploadSuccess"
-      class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative"
-      role="alert"
-    >
-      File uploaded successfully!
-    </div>
-    <!-- DEPRECATE
-    <div v-for="(file, index) in newFilename" :key="index" class="pt-2">
-      <a
-        :href="encryptedFileURL[index]"
-        :download="file"
-        class="text-blue-500 hover:text-blue-800"
-        >Download -> {{ file }}</a
+    <div class="w-full px-10 ml-5 pt-3">
+      <div
+        v-if="error"
+        class="px-10 py-2 bg-warning-red transform -skew-x-12 text-gray-200 rounded relative"
+        role="alert"
       >
+        <strong class="font-bold text-xl">ERROR!</strong>
+        <br />
+        <span class="pl-5 block sm:inline transform skew-x-12">{{
+          error
+        }}</span>
+      </div>
+      <div
+        v-if="uploadSuccess"
+        class="px-10 py-2 bg-third-blue transform -skew-x-12 text-gray-200 rounded relative"
+        role="alert"
+      >
+        File uploaded successfully!
+      </div>
     </div>
-      -->
   </div>
 </template>
 
 <script>
 import { useVaultStore } from '@/stores/vault'
+import { encryptFile } from '~/utils/fileEncryptUtils'
 
 export default {
   data() {
@@ -50,161 +49,124 @@ export default {
       encryptedFileURL: [],
       keyPass: '',
       newFilename: [],
+      fileNames: [],
+      filesToUpload: [],
       // FROM upload.vue
-      accessToken: sessionStorage.getItem('access_token') || null,
       error: null, // init 2 null
       uploadSuccess: false,
     }
   },
+  computed: {
+    accessToken() {
+      const vaultStore = useVaultStore()
+      return vaultStore.cloudAccessToken
+    },
+    cryptoKeyObj() {
+      const vaultStore = useVaultStore()
+      return vaultStore.key
+    },
+    cloudFolderName() {
+      const vaultStore = useVaultStore()
+      return vaultStore.cloudFolderName
+    },
+  },
   methods: {
     async handleFileUpload() {
       this.files = Array.from(this.$refs.fileInput.files)
-      const vaultStore = useVaultStore()
 
-      const encoder = new TextEncoder()
-
-      for (let i = 0; i < this.files.length; i++) {
-        // derive key from password
-        const cryptoKeyObj = vaultStore.key
-
-        // convert file to arraybuffer
-        const file = this.files[i]
-        const fileAB = await file.arrayBuffer()
-
-        // generate iv
-        const iv = crypto.getRandomValues(new Uint8Array(12))
-
-        // encrypt data
-        const encryptedData = await crypto.subtle.encrypt(
-          { name: 'AES-GCM', iv },
-          cryptoKeyObj,
-          fileAB
-        )
-
-        // get filename and iv for filename encryption
-        const encodedFilename = encoder.encode(file.name)
-        const filenameiv = crypto.getRandomValues(new Uint8Array(12))
-
-        // encrypt filename
-        const encryptedFilename = await crypto.subtle.encrypt(
-          { name: 'AES-GCM', iv: filenameiv },
-          cryptoKeyObj,
-          encodedFilename
-        )
-
-        // convert encrypted filename to readable string
-        const filenameArray = new Uint8Array(encryptedFilename)
-        // const filenameString = String.fromCharCode.apply(null, filenameArray)
-        const base64Filename = this.toBase64Url(filenameArray)
-        const newFilename = base64Filename + '.bin'
-        this.newFilename.push(newFilename)
-
-        // create blob for file download
-        // concatenate index for pinia filenameArray, newline separator, filenameiv, and iv into encrypted file
-        const encryptedBlob = new Blob(
-          [i, '\n', filenameiv, iv, encryptedData],
-          { type: 'application/octet-stream' }
-        )
-        this.encryptedFileURL.push(URL.createObjectURL(encryptedBlob))
-
-        // Save the file as a File object
-        // const encryptedFile = new File(
-        //   [i, '\n', filenameiv, iv, encryptedData],
-        //   newFilename,
-        //   {
-        //     type: 'application/octet-stream',
-        //   }
-        // )
-        //await this.uploadFile(encryptedFile)
-
-        // file info details for file creation in server
-
-        const fileNameivBase64 = this.toBase64Url(filenameiv)
-
-        const fileInfo = {
-          fileNameIndex: i,
-          // fileNameiv: filenameiv,
-          fileName: `${fileNameivBase64}${newFilename}`,
-          fileContentiv: iv,
-          fileContent: encryptedData,
-        }
-
-        await this.uploadFile(fileInfo)
-        // await this.uploadFile(encryptedFile)
-      }
-    },
-
-    // TODO: Only created to handle 1 file at a time
-    async uploadFile(file) {
-      console.log('Uploading file:', file.fileName)
-      // upload file to OneDrive using Microsoft Graph API
+      let errorBoolean = false
       try {
-        if (!this.accessToken) {
-          throw new Error('Access token not found')
-        }
-
-        const fileContentBase64 = this.arrayBufferToBase64(file.fileContent)
-        const fileContentivBase64 = this.arrayBufferToBase64(file.fileContentiv)
-
-        const response = await $fetch('/api/vault/upload', {
-          method: 'POST',
-          body: {
-            fileNameIndex: file.fileNameIndex,
-            // fileNameiv: fileNameivBase64,
-            fileName: file.fileName,
-            fileContentiv: fileContentivBase64,
-            accessToken: this.accessToken,
-            // apikey: import.meta.env.VITE_CLIENT_SECRET,
-            fileContent: fileContentBase64,
-          },
-        })
-
-        if (!response.ok) {
-          const errorText = await response.text()
-          throw new Error(
-            `Failed to upload file: ${response.statusText} - ${errorText}`
+        for (let i = 0; i < this.files.length; i++) {
+          // Encrypt all files uploaded
+          console.log('Encrypting ', this.files[i].name, '... ')
+          const fileToUpload = await encryptFile(
+            this.files[i],
+            this.cryptoKeyObj
           )
+
+          this.filesToUpload.push(fileToUpload)
+          // Filenames array to send to backend for upload urls
+          this.fileNames.push(fileToUpload.name)
         }
 
-        this.uploadSuccess = true
+        // Upload files
+        await this.uploadFile()
+      } catch (err) {
+        // TODO: better errror handling
+        console.error(err)
+        this.error = err.message
+        errorBoolean = true
+      }
 
+      if (!errorBoolean) {
+        this.uploadSuccess = true
         // timer for how long alert last
         setTimeout(() => {
           this.uploadSuccess = false
         }, 10000)
-      } catch (err) {
-        this.error = `Error uploading file: ${err.message}`
-        console.error('Error details:', err)
       }
     },
+    async uploadFile() {
+      const filesStore = useFilesStore()
 
-    toBase64Url(byteArray) {
-      // Convert byteArray to a standard base64 string
-      const base64String = window.btoa(
-        String.fromCharCode.apply(null, byteArray)
-      )
+      // Get Upload Urls for each file
+      const response = await $fetch('/api/vault/upload', {
+        method: 'POST',
+        body: {
+          files: this.fileNames,
+          accessToken: this.accessToken,
+          cloudFolderName: this.cloudFolderName,
+        },
+      })
 
-      // Make the base64 string URL and filename safe
-      const base64UrlString = base64String
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '')
-
-      return base64UrlString
-    },
-    toHexString(byteArray) {
-      return Array.from(byteArray, function (byte) {
-        return ('0' + (byte & 0xff).toString(16)).slice(-2)
-      }).join('')
-    },
-    arrayBufferToBase64(buffer) {
-      let binary = ''
-      const bytes = new Uint8Array(buffer)
-      const len = bytes.byteLength
-      for (let i = 0; i < len; i++) {
-        binary += String.fromCharCode(bytes[i])
+      if (!response.ok) {
+        throw new Error('Error during files upload.')
       }
-      return btoa(binary)
+
+      for (let i = 0; i < this.filesToUpload.length; i++) {
+        console.log('Uploading ', this.files[i].name, '... ')
+        // upload file to OneDrive using Microsoft Graph API
+        if (!this.accessToken) {
+          throw new Error('Access token not found')
+        }
+
+        // Upload the file to OneDrive using the upload session URL in chunks
+        const chunkSize = 1024 * 1024 // 1 MB per chunk
+        let start = 0
+
+        while (start < this.filesToUpload[i].size) {
+          const end = Math.min(start + chunkSize, this.filesToUpload[i].size)
+          const chunk = this.filesToUpload[i].slice(start, end)
+
+          console.log('Uploading chunks... ')
+          const uploadResponse = await fetch(response.uploadUrls[i], {
+            method: 'PUT',
+            headers: {
+              'Content-Range': `bytes ${start}-${end - 1}/${this.filesToUpload[i].size}`,
+            },
+            body: chunk,
+          })
+
+          if (!uploadResponse.ok && uploadResponse.status !== 308) {
+            const errorText = await uploadResponse.text()
+            throw new Error(
+              `Failed to upload file: ${uploadResponse.status} - ${errorText}`
+            )
+          }
+
+          start = end
+        }
+      }
+
+      // Clear arrays for next uploads
+      this.files = []
+      this.encryptedFileURL = []
+      this.newFilename = []
+      this.filesToUpload = []
+      this.fileNames = []
+      // Refresh files list to include newly uploaded file
+      await filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
+      await filesStore.previewFilename(this.cryptoKeyObj)
     },
   },
 }

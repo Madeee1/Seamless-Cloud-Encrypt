@@ -1,15 +1,5 @@
 import { serverSupabaseUser } from '#supabase/server'
 
-function base64ToArrayBuffer(base64: any) {
-  const binaryString = atob(base64)
-  const len = binaryString.length
-  const bytes = new Uint8Array(len)
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i)
-  }
-  return bytes.buffer
-}
-
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
 
@@ -21,55 +11,40 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const {
-    fileNameIndex,
-    // fileNameiv,
-    fileName,
-    fileContentiv,
-    accessToken,
-    // apikey,
-    fileContent,
-  } = await readBody(event)
+  const { files, accessToken, cloudFolderName } = await readBody(event)
+  const uploadUrls: string[] = []
 
-  // const fileNameivBuffer = base64ToArrayBuffer(fileNameiv)
-  const fileContentivBuffer = base64ToArrayBuffer(fileContentiv)
-  const fileContentBuffer = base64ToArrayBuffer(fileContent)
+  // API key not used
 
-  const encryptedFile = new File(
-    [
-      fileNameIndex,
-      '\n',
-      // fileNameivBuffer,
-      fileContentivBuffer,
-      fileContentBuffer,
-    ],
-    fileName,
-    {
-      type: 'application/octet-stream',
-    }
-  )
-
-  const apikey = process.env.CLIENT_SECRET
-
-  const response = await fetch(
-    `https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo/${fileName}:/content`,
-    {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': encryptedFile.type,
-        apikey: apikey || '',
-      },
-      body: encryptedFile,
-    }
-  )
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(
-      `Failed to upload file: ${response.statusText} - ${errorText}`
+  for (const fileName of files) {
+    const response = await fetch(
+      `https://graph.microsoft.com/v1.0/me/drive/root:/${cloudFolderName}/${fileName}:/createUploadSession`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          item: {
+            '@microsoft.graph.conflictBehavior': 'rename',
+            name: fileName,
+          },
+        }),
+      }
     )
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(
+        `Failed to upload file: ${response.statusText} - ${errorText}`
+      )
+    }
+
+    const data = await response.json()
+    const uploadUrl = data.uploadUrl
+    uploadUrls.push(uploadUrl)
   }
 
-  return { ok: true }
+  return { ok: true, uploadUrls: uploadUrls }
 })

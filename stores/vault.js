@@ -13,13 +13,11 @@ export const useVaultStore = defineStore('vault', {
     description: '',
     idleTime: Number | undefined,
     isOpen: false,
+    tokenExpiresIn: Number | undefined,
   }),
   actions: {
     setKey(newKey) {
       this.key = newKey
     },
-  },
-  persist: {
-    storage: persistedState.sessionStorage,
   },
 })

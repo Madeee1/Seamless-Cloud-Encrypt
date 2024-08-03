@@ -1,4 +1,5 @@
 import { serverSupabaseUser } from '#supabase/server'
+import { arrayBufferToBase64 } from '~/utils/fileEncryptUtils'
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
@@ -11,11 +12,10 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { accessToken, downloadedFiles, cloudFolderName } =
-    await readBody(event)
+  try {
+    const { accessToken, fileName, cloudFolderName } = await readBody(event)
 
-  const deletePromises = downloadedFiles.map(async (fileName: any) => {
-    return fetch(
+    const response = await fetch(
       `https://graph.microsoft.com/v1.0/me/drive/root:/${cloudFolderName}/${fileName}`,
       {
         method: 'DELETE',
@@ -23,13 +23,16 @@ export default defineEventHandler(async (event) => {
           Authorization: `Bearer ${accessToken}`,
         },
       }
-    ).then((response) => {
-      if (!response.ok) {
-        throw new Error(`Failed to delete ${fileName}: ${response.statusText}`)
-      }
-    })
-  })
+    )
 
-  await Promise.all(deletePromises)
-  return { ok: true }
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file: ${response.statusText}`)
+    }
+
+    return {
+      ok: true,
+    }
+  } catch (error) {
+    console.error('Error deleting file from OneDrive:', error)
+  }
 })

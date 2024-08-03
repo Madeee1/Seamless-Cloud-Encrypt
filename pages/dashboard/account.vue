@@ -1,7 +1,7 @@
 <template>
-  <div class="flex flex-col w-[500px] place-content-center mx-auto">
-    <br />
+  <div class="flex flex-col gap-28">
     <AccountView />
+    <AccountDelete />
   </div>
 </template>
 

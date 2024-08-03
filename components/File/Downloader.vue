@@ -1,31 +1,72 @@
 <template>
-  <div class="max-w-md p-4">
-    <h1 class="text-2xl font-bold mb-4">Download:</h1>
-    <div v-if="confirmPassword">
-      <label for="confirm-password">Confirm Password:</label>
-      <input
-        id="confirm-password"
-        v-model="password"
-        type="password"
-        placeholder="Enter vault password"
-        class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-      />
-      <UButton class="mx-4 mt-4" @click="confirmDownload">Confirm</UButton>
-      <br />
-      <br />
+  <div class="flex flex-col h-full px-4">
+    <div class="w-full px-8 py-2 space-y-2">
+      <h1
+        class="text-2xl font-semibold text-gray-200 first-letter:text-third-blue"
+      >
+        Download the files you have encrypted in the vault
+      </h1>
+      <div v-if="confirmPassword" class="mb-3 first-letter:text-third-blue">
+        <label
+          for="confirm-password"
+          class="text-xl font-semibold text-gray-200"
+          >{{
+            deleting
+              ? 'Confirm Password to Delete Files:'
+              : 'Confirm Password to Download Files:'
+          }}</label
+        >
+        <input
+          id="confirm-password"
+          v-model="password"
+          type="password"
+          placeholder="Enter vault password"
+          class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
+        />
+        <UButton
+          class="mx-4 mt-4"
+          @click="
+            deleting ? confirmAction('delete') : confirmAction('download')
+          "
+          >Confirm</UButton
+        >
+        <UButton
+          class="bg-red-500 hover:bg-red-700 mx-4 mt-4"
+          @click="(confirmPassword = false), (password = null)"
+          >Cancel</UButton
+        >
+        <br />
+        <br />
+      </div>
     </div>
     <button
-      class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
-      @click="filesList"
+      class="block w-1/6 text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded mb-4"
+      @click="refreshFilesList"
     >
       Refresh Files List
     </button>
+    <br />
+    <div class="flex space-x-5">
+      <button
+        class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4 w-full"
+        @click="(confirmPassword = true), (deleting = false)"
+      >
+        Download
+      </button>
+      <button
+        class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mb-4 w-full"
+        @click="(confirmPassword = true), (deleting = true)"
+      >
+        Delete
+      </button>
+    </div>
     <ul>
       <li
         v-for="file in files"
         :key="file.id"
         class="flex items-center justify-between bg-gray-100 p-2 rounded mb-2 gap-2"
       >
+        <input v-model="selectedFiles" type="checkbox" :value="file" />
         <div class="flex items-center">
           <img
             v-if="file.thumbnailUrl"
@@ -37,239 +78,125 @@
             {{ file.oriFilename }}
           </span>
         </div>
-        <UButton
-          class="text-white font-bold py-1 px-3 rounded"
-          @click="handleDownload(file.id)"
-        >
-          Download
-        </UButton>
       </li>
     </ul>
-    <div
-      v-if="error"
-      class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
-      role="alert"
-    >
-      <p>Error: {{ error }}</p>
+    <div class="w-full px-10 ml-5 pt-3">
+      <div
+        v-if="error"
+        class="px-10 py-2 bg-warning-red transform -skew-x-12 text-gray-200 rounded relative"
+        role="alert"
+      >
+        <strong class="font-bold text-xl">ERROR!</strong>
+        <br />
+        <span class="pl-5 block sm:inline transform skew-x-12">{{
+          error
+        }}</span>
+      </div>
     </div>
   </div>
 </template>
 <script>
 import { useVaultStore } from '@/stores/vault'
+import { useFilesStore } from '@/stores/files'
+import { decryptFile, base64ToArrayBuffer } from '~/utils/fileEncryptUtils'
 
 export default {
   data() {
     return {
-      // files: [],
       decryptedFileURL: [],
       originalFilename: [],
+      selectedFiles: [],
       // from download.vue
-      accessToken: sessionStorage.getItem('access_token') || null,
-      files: [],
       error: null,
       password: null,
-      selectedFileid: null,
       confirmPassword: false,
+      deleting: false,
     }
   },
+  computed: {
+    accessToken() {
+      const vaultStore = useVaultStore()
+      return vaultStore.cloudAccessToken
+    },
+    cryptoKeyObj() {
+      const vaultStore = useVaultStore()
+      return vaultStore.key
+    },
+    cloudFolderName() {
+      const vaultStore = useVaultStore()
+      return vaultStore.cloudFolderName
+    },
+    files() {
+      const filesStore = useFilesStore()
+      return filesStore.files
+    },
+  },
+  async mounted() {
+    // this.filesList()
+    const filesStore = useFilesStore()
+    await filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
+    await filesStore.previewFilename(this.cryptoKeyObj)
+  },
   methods: {
-    // downloadFile() {
-    //   const a = document.createElement('a')
-    //   a.href = this.decryptedFileURL
-    //   a.download = this.originalFilename
-    //   document.body.appendChild(a)
-    //   a.click()
-    // },
-    handleDownload(fileId) {
-      this.confirmPassword = true
-      this.selectedFileid = fileId
-    },
-
-    async previewFilename(filename) {
-      const vaultStore = useVaultStore()
-      const cryptoKeyObj = vaultStore.key
-
-      const encryptedFilenameB64 = filename.replace(/\.bin$/, '')
-      const encFNameUInt8Array = this.fromBase64Url(encryptedFilenameB64)
-      const encryptedFilenameAndiv = encFNameUInt8Array.buffer
-
-      const fileNameiv = encryptedFilenameAndiv.slice(0, 12)
-      const encryptedFilename = encryptedFilenameAndiv.slice(12)
-
-      try {
-        const decryptedFilename = await crypto.subtle.decrypt(
-          { name: 'AES-GCM', iv: fileNameiv },
-          cryptoKeyObj,
-          encryptedFilename
-        )
-        return new TextDecoder().decode(decryptedFilename)
-      } catch (error) {
-        return 'Undecipherable_Filename.txt'
-      }
-    },
-
-    async decryptFile(fileArrayBuffer, filename) {
-      const vaultStore = useVaultStore()
-      // file converted to arrayBuffer in backend
-      // get key and filename from pinia store
-      const cryptoKeyObj = vaultStore.key
-
-      // extract index of orignal encrypted filename
-      const separatorIndex = new Uint8Array(fileArrayBuffer).indexOf(
-        '\n'.charCodeAt(0)
-      )
-
-      // Extract the filename, which is b64. Convert to ArrayBuffer for decryption
-      const encryptedFilenameB64 = filename.replace(/\.bin$/, '')
-      const encFNameUInt8Array = this.fromBase64Url(encryptedFilenameB64)
-      const encryptedFilename = encFNameUInt8Array.buffer
-
-      // extract filename iv from encrypted file
-      const ivBuffer = fileArrayBuffer.slice(
-        separatorIndex + 1,
-        separatorIndex + 13
-      )
-      const iv = new Uint8Array(ivBuffer)
-
-      // extract iv from encrypted file
-      // const ivBuffer = fileArrayBuffer.slice(
-      //   separatorIndex + 13,
-      //   separatorIndex + 25
-      // )
-      // const iv = new Uint8Array(ivBuffer)
-
-      // extract encrypted content from encrypted file
-      const ciphertext = fileArrayBuffer.slice(separatorIndex + 13)
-
-      const filenameiv = encryptedFilename.slice(0, 12)
-      const encryptedFilenameOnly = encryptedFilename.slice(12)
-
-      let originalFilename = ''
-      // decrypt filename
-      try {
-        const decryptedFilename = await crypto.subtle.decrypt(
-          { name: 'AES-GCM', iv: filenameiv },
-          cryptoKeyObj,
-          encryptedFilenameOnly
-        )
-        originalFilename = new TextDecoder().decode(decryptedFilename)
-        this.originalFilename.push(originalFilename)
-      } catch (error) {
-        console.error('error during filename decryption: ', error)
-      }
-
-      let decryptedBlob = null
-      // decrypt file and create download URL
-      try {
-        const decryptedData = await crypto.subtle.decrypt(
-          { name: 'AES-GCM', iv: iv },
-          cryptoKeyObj,
-          ciphertext
-        )
-        decryptedBlob = new Blob([decryptedData], {
-          type: 'text/plain',
-        })
-        this.decryptedFileURL.push(URL.createObjectURL(decryptedBlob))
-      } catch (error) {
-        console.error('error during content decryption: ', error)
-      }
-
-      // Return a File object
-      const decryptedFile = new File([decryptedBlob], originalFilename, {
-        type: 'text/plain',
-      })
-      return decryptedFile
-    },
-
-    async filesList() {
-      try {
-        const response = await fetch(
-          'https://graph.microsoft.com/v1.0/me/drive/root:/CryptAndGo:/children',
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${this.accessToken}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        )
-
-        if (!response.ok) {
-          throw new Error(`Failed to list files: ${response.statusText}`)
+    downloadSelected() {
+      if (this.selectedFiles.length > 0) {
+        for (const file of this.selectedFiles) {
+          this.downloadFile(file)
         }
-
-        const data = await response.json()
-        this.files = data.value // store list of files
-
-        for (let i = 0; i < this.files.length; i++) {
-          const oriFilename = await this.previewFilename(this.files[i].name)
-
-          this.files[i].oriFilename = oriFilename
-        }
-
-        // TODO: IMPLEMENT
-        // Fetch thumbnails of each file
-        // for (const file of this.files) {
-        //   if (file.file) {
-        //     const thumbnailResponse = await fetch(
-        //       `https://graph.microsoft.com/v1.0/me/drive/items/${file.id}/thumbnails`,
-        //       {
-        //         method: 'GET',
-        //         headers: {
-        //           Authorization: `Bearer ${this.accessToken}`,
-        //           'Content-Type': 'application/json',
-        //         },
-        //       }
-        //     )
-
-        //     if (thumbnailResponse.ok) {
-        //       const thumbnailData = await thumbnailResponse.json()
-        //       if (thumbnailData.value && thumbnailData.value.length > 0) {
-        //         file.thumbnailUrl = thumbnailData.value[0].medium.url // medium size thumbnail
-        //       } else {
-        //         console.error(
-        //           'Failed to fetch thumbnail:',
-        //           thumbnailResponse.statusText
-        //         )
-        //       }
-        //     }
-        //   }
-        // }
-      } catch (err) {
-        this.error = `Error listing files: ${err.message}`
-        console.error('Error details:', err)
+      } else {
+        alert('No selected file.')
       }
     },
 
-    async downloadFile(fileId) {
+    async deleteSelected() {
+      if (this.selectedFiles.length > 0) {
+        for (const file of this.selectedFiles) {
+          await this.deleteFile(file)
+        }
+      } else {
+        alert('No selected file.')
+      }
+    },
+
+    async refreshFilesList() {
+      const filesStore = useFilesStore()
+      await filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
+      await filesStore.previewFilename(this.cryptoKeyObj)
+    },
+
+    async downloadFile(file) {
       try {
         if (!this.accessToken) {
           throw new Error('Access token not found')
         }
 
-        const response = await $fetch('/api/vault/download', {
-          method: 'POST',
-          body: {
-            accessToken: this.accessToken,
-            fileId: fileId,
-          },
-        })
-
-        if (!response.ok) {
-          throw new Error(`Failed to download file: ${response.statusText}`)
-        }
-
-        const encryptedFileArrayBuffer = this.base64ToArrayBuffer(
-          response.encryptedBlob
+        const response = await fetch(
+          `https://graph.microsoft.com/v1.0/me/drive/items/${file.id}/content`,
+          {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${this.accessToken}`,
+            },
+          }
         )
 
+        if (!response.ok) {
+          throw new Error(`Failed to fetch file: ${response.statusText}`)
+        }
+
+        const encryptedFileBlob = await response.blob()
+        const encryptedFileBuffer = await encryptedFileBlob.arrayBuffer()
+
         // Decrypt File here
-        const decryptedFile = await this.decryptFile(
-          encryptedFileArrayBuffer,
-          response.encryptedFilename
+        console.log('Decrypting ', file.name, '... ')
+        const decryptedFile = await decryptFile(
+          file.name,
+          encryptedFileBuffer,
+          this.cryptoKeyObj
         )
 
         // Download the decrypted file
+        console.log('Downloading ', decryptedFile.name, '... ')
         const url = window.URL.createObjectURL(decryptedFile)
         const a = document.createElement('a')
         a.href = url
@@ -281,6 +208,23 @@ export default {
         this.error = `Error downloading file: ${err.message}`
         console.error('Error details:', err)
       }
+    },
+
+    async deleteFile(file) {
+      const response = await $fetch('/api/vault/delete', {
+        method: 'POST',
+        body: {
+          accessToken: this.accessToken,
+          fileName: file.name,
+          cloudFolderName: this.cloudFolderName,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete ${file.name}: ${response.statusText}`)
+      }
+
+      console.log(file.name, ' deleted successfully.\n ')
     },
 
     fromBase64Url(base64UrlString) {
@@ -305,17 +249,7 @@ export default {
       return byteArray
     },
 
-    base64ToArrayBuffer(base64) {
-      const binaryString = atob(base64)
-      const len = binaryString.length
-      const bytes = new Uint8Array(len)
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i)
-      }
-      return bytes.buffer
-    },
-
-    async confirmDownload() {
+    async confirmAction(action) {
       const vault = useVaultStore()
       try {
         const response = await $fetch('/api/vault/auth/download', {
@@ -327,18 +261,43 @@ export default {
         })
 
         if (response.ok) {
-          this.downloadFile(this.selectedFileid)
-          this.confirmPassword = false
-          this.selectedFileid = null
-          this.password = null
+          if (action == 'download') {
+            this.downloadSelected()
+            this.confirmPassword = false
+            this.password = null
+            // Clear array for consecutive downloads
+            this.selectedFiles = []
+          } else if (action == 'delete') {
+            await this.deleteSelected()
+            // Refresh after deleting selected files
+            const filesStore = useFilesStore()
+            await filesStore.refreshFilesList(
+              this.cloudFolderName,
+              this.accessToken
+            )
+            await filesStore.previewFilename(this.cryptoKeyObj)
+            this.deleting = false
+            this.confirmPassword = false
+            this.password = null
+            // Clear array for consecutive deletions
+            this.selectedFiles = []
+          } else {
+            console.error('Invalid Action')
+          }
         }
       } catch (error) {
         if (!error.response) {
           alert('Network error, try again later!')
+          this.confirmPassword = false
+          this.password = null
         } else if (error.response.status === 401) {
           alert('Wrong password, try again!')
+          this.confirmPassword = false
+          this.password = null
         } else if (error.response.status === 500) {
           alert('Server error, try again later!')
+          this.confirmPassword = false
+          this.password = null
         }
       }
     },
