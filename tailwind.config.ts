@@ -64,6 +64,18 @@ export default {
           textStrokeColor: value,
         }
       }
+
+      const newUtilities = {
+        '.scrollbar-hidden': {
+          '-ms-overflow-style': 'none' /* IE and Edge */,
+          'scrollbar-width': 'none' /* Firefox */,
+        },
+        '.scrollbar-hidden::-webkit-scrollbar': {
+          display: 'none' /* Chrome, Safari, and Opera */,
+        },
+      }
+
+      addUtilities(newUtilities, ['responsive', 'hover'])
       addUtilities(utilities, ['responsive', 'hover'])
     },
   ],
