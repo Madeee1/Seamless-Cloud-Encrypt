@@ -23,13 +23,13 @@
       </p>
       <div class="flex space-x-4 w-1/3 mx-auto text-lg mt-10 mb-5">
         <button
-          class="flex-1 bg-third-blue text-gray-200 px-6 py-3 rounded-md font-semibold hover:shadow-[5px_3px_0px_rgb(255,0,0)] hover:bg-white hover:text-third-blue"
+          class="flex-1 bg-third-blue text-gray-200 px-6 py-3 rounded-md font-semibold hover:bg-white hover:text-third-blue"
           @click="navigateTo('/login')"
         >
           Get Started
         </button>
         <button
-          class="flex-1 bg-white text-third-blue px-6 py-3 rounded-md font-semibold hover:shadow-[5px_3px_0px_rgb(255,0,0)] hover:bg-third-blue hover:text-gray-200"
+          class="flex-1 bg-white text-third-blue px-6 py-3 rounded-md font-semibold hover:bg-third-blue hover:text-gray-200"
           @click="moveToDashboard"
         >
           Open Dashboard

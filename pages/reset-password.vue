@@ -1,43 +1,56 @@
 <template>
-  <div>
-    <UCard class="w-[450px] mx-auto mt-8 rounded-2xl">
-      <template #header>
-        <h2>Reset Password</h2>
-      </template>
-      <UForm
-        :schema="schema"
-        :state="state"
-        class="space-y-4"
-        @submit="onSubmit"
-      >
-        <UFormGroup label="New Password" name="newPassword" class="h-[80px]">
-          <UInput
-            v-model="state.newPassword"
-            type="password"
-            placeholder="Enter your new password"
-          ></UInput>
-        </UFormGroup>
-
-        <UFormGroup
-          label="Confirm New Password"
-          name="confirmPassword"
-          class="h-[80px]"
+  <div class="flex flex-col min-h-screen bg-main-blue">
+    <div>
+      <UCard class="w-[450px] mx-auto mt-8 rounded-xl bg-gray-200">
+        <template #header>
+          <h2
+            class="text-2xl font-semibold text-main-blue first-letter:text-third-blue"
+          >
+            Reset <span class="text-third-blue">P</span>assword
+          </h2>
+        </template>
+        <UForm
+          :schema="schema"
+          :state="state"
+          class="space-y-4"
+          @submit="onSubmit"
         >
-          <UInput
-            v-model="state.confirmPassword"
-            type="password"
-            placeholder="Re-enter your new password"
-          ></UInput>
-        </UFormGroup>
+          <UFormGroup size="xl" label="New Password" name="newPassword">
+            <UInput
+              v-model="state.newPassword"
+              type="password"
+              placeholder="Enter your new password"
+              color="blue"
+            ></UInput>
+          </UFormGroup>
 
-        <div class="flex">
-          <UButton type="submit"> Confirm </UButton>
-          <span class="text-red-500 ml-2 text-sm my-auto">
-            {{ errorMessage }}
-          </span>
-        </div>
-      </UForm>
-    </UCard>
+          <UFormGroup
+            size="xl"
+            label="Confirm New Password"
+            name="confirmPassword"
+          >
+            <UInput
+              v-model="state.confirmPassword"
+              type="password"
+              placeholder="Re-enter your new password"
+              color="blue"
+            ></UInput>
+          </UFormGroup>
+
+          <div class="flex justify-end">
+            <UButton
+              type="submit"
+              class="block text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded"
+            >
+              Confirm
+            </UButton>
+            <span class="text-red-500 ml-2 text-md">
+              {{ errorMessage }}
+            </span>
+          </div>
+        </UForm>
+      </UCard>
+    </div>
   </div>
 </template>
 

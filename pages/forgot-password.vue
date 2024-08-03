@@ -1,27 +1,42 @@
 <template>
-  <div>
-    <UCard class="w-[450px] mx-auto mt-8 rounded-2xl">
-      <template #header>
-        <h2>Reset Password</h2>
-      </template>
-      <UForm
-        :schema="schema"
-        :state="state"
-        class="space-y-4"
-        @submit="onSubmit"
-      >
-        <UFormGroup label="Email" name="email" class="h-[80px]">
-          <UInput v-model="state.email" placeholder="example@example.com" />
-        </UFormGroup>
+  <div class="flex flex-col min-h-screen bg-main-blue">
+    <div>
+      <UCard class="w-[450px] mx-auto mt-8 rounded-xl bg-gray-200">
+        <template #header>
+          <h2
+            class="text-2xl font-semibold text-main-blue first-letter:text-third-blue"
+          >
+            Reset <span class="text-third-blue">P</span>assword
+          </h2>
+        </template>
+        <UForm
+          :schema="schema"
+          :state="state"
+          class="space-y-4"
+          @submit="onSubmit"
+        >
+          <UFormGroup size="xl" label="Email" name="email">
+            <UInput
+              v-model="state.email"
+              placeholder="example@example.com"
+              color="blue"
+            />
+          </UFormGroup>
 
-        <div class="flex">
-          <UButton type="submit"> Submit </UButton>
-          <span class="text-red-500 ml-2 text-sm my-auto">
-            {{ errorMessage }}
-          </span>
-        </div>
-      </UForm>
-    </UCard>
+          <div class="flex justify-end">
+            <UButton
+              type="submit"
+              class="block text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded"
+            >
+              Submit
+            </UButton>
+            <span class="text-red-500 ml-2 text-md">
+              {{ errorMessage }}
+            </span>
+          </div>
+        </UForm>
+      </UCard>
+    </div>
   </div>
 </template>
 
@@ -62,4 +77,3 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   }
 }
 </script>
-
