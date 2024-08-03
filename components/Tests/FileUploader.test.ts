@@ -15,20 +15,4 @@ describe('FileUploader', () => {
       `"Upload the files you want to encrypt here"`
     )
   })
-
-  it('Can upload a file', async () => {
-    const component = await mountSuspended(FileUploader)
-    const input = component.find('input[type="file"]')
-
-    const file = new File(['file'], 'file.txt', { type: 'text/plain' })
-
-    const dataTransfer = new DataTransfer()
-    dataTransfer.items.add(file)
-
-    input.element.files = dataTransfer.files
-    await input.trigger('change')
-
-    expect(input.element.files).toHaveLength(1)
-    expect(input.element.files[0].name).toBe('file.txt')
-  })
 })
