@@ -30,13 +30,18 @@
           "
           >Confirm</UButton
         >
+        <UButton
+          class="bg-red-500 hover:bg-red-700 mx-4 mt-4"
+          @click="(confirmPassword = false), (password = null)"
+          >Cancel</UButton
+        >
         <br />
         <br />
       </div>
     </div>
     <button
       class="block w-1/6 text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded mb-4"
-      @click="filesList"
+      @click="refreshFilesList"
     >
       Refresh Files List
     </button>
@@ -61,7 +66,7 @@
         :key="file.id"
         class="flex items-center justify-between bg-gray-100 p-2 rounded mb-2 gap-2"
       >
-        <input type="checkbox" @change="addFile(file)" />
+        <input v-model="selectedFiles" type="checkbox" :value="file" />
         <div class="flex items-center">
           <img
             v-if="file.thumbnailUrl"
@@ -92,20 +97,18 @@
 </template>
 <script>
 import { useVaultStore } from '@/stores/vault'
+import { useFilesStore } from '@/stores/files'
 import { decryptFile, base64ToArrayBuffer } from '~/utils/fileEncryptUtils'
 
 export default {
   data() {
     return {
-      // files: [],
       decryptedFileURL: [],
       originalFilename: [],
-      filesToDownload: [],
+      selectedFiles: [],
       // from download.vue
-      files: [],
       error: null,
       password: null,
-      selectedFile: null,
       confirmPassword: false,
       deleting: false,
     }
@@ -123,87 +126,42 @@ export default {
       const vaultStore = useVaultStore()
       return vaultStore.cloudFolderName
     },
+    files() {
+      const filesStore = useFilesStore()
+      return filesStore.files
+    },
+  },
+  async mounted() {
+    // this.filesList()
+    const filesStore = useFilesStore()
+    await filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
+    await filesStore.previewFilename(this.cryptoKeyObj)
   },
   methods: {
     downloadSelected() {
-      if (this.filesToDownload.length > 0) {
-        for (const file of this.filesToDownload) {
+      if (this.selectedFiles.length > 0) {
+        for (const file of this.selectedFiles) {
           this.downloadFile(file)
         }
       } else {
         alert('No selected file.')
       }
     },
-    deleteSelected() {
-      if (this.filesToDownload.length > 0) {
-        for (const file of this.filesToDownload) {
-          this.deleteFile(file)
+
+    async deleteSelected() {
+      if (this.selectedFiles.length > 0) {
+        for (const file of this.selectedFiles) {
+          await this.deleteFile(file)
         }
       } else {
         alert('No selected file.')
       }
     },
-    addFile(file) {
-      if (!this.filesToDownload.includes(file)) {
-        this.filesToDownload.push(file)
-      } else {
-        this.filesToDownload = this.filesToDownload.filter(
-          (element) => element !== file
-        )
-      }
-    },
-    async previewFilename(filename) {
-      const vaultStore = useVaultStore()
-      const cryptoKeyObj = vaultStore.key
 
-      const encryptedFilenameB64 = filename.replace(/\.bin$/, '')
-      const encFNameUInt8Array = this.fromBase64Url(encryptedFilenameB64)
-      const encryptedFilenameAndiv = encFNameUInt8Array.buffer
-
-      const fileNameiv = encryptedFilenameAndiv.slice(0, 12)
-      const encryptedFilename = encryptedFilenameAndiv.slice(12)
-
-      try {
-        const decryptedFilename = await crypto.subtle.decrypt(
-          { name: 'AES-GCM', iv: fileNameiv },
-          cryptoKeyObj,
-          encryptedFilename
-        )
-        return new TextDecoder().decode(decryptedFilename)
-      } catch (error) {
-        return 'Undecipherable_Filename.txt'
-      }
-    },
-
-    async filesList() {
-      try {
-        const response = await fetch(
-          `https://graph.microsoft.com/v1.0/me/drive/root:/${this.cloudFolderName}:/children`,
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${this.accessToken}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        )
-
-        if (!response.ok) {
-          throw new Error(`Failed to list files: ${response.statusText}`)
-        }
-
-        const data = await response.json()
-        this.files = data.value // store list of files
-
-        for (let i = 0; i < this.files.length; i++) {
-          const oriFilename = await this.previewFilename(this.files[i].name)
-
-          this.files[i].oriFilename = oriFilename
-        }
-      } catch (err) {
-        this.error = `Error listing files: ${err.message}`
-        console.error('Error details:', err)
-      }
+    async refreshFilesList() {
+      const filesStore = useFilesStore()
+      await filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
+      await filesStore.previewFilename(this.cryptoKeyObj)
     },
 
     async downloadFile(file) {
@@ -305,16 +263,23 @@ export default {
           if (action == 'download') {
             this.downloadSelected()
             this.confirmPassword = false
-            this.selectedFile = null
             this.password = null
+            // Clear array for consecutive downloads
+            this.selectedFiles = []
           } else if (action == 'delete') {
-            this.deleteSelected()
+            await this.deleteSelected()
             // Refresh after deleting selected files
-            this.filesList()
+            const filesStore = useFilesStore()
+            await filesStore.refreshFilesList(
+              this.cloudFolderName,
+              this.accessToken
+            )
+            await filesStore.previewFilename(this.cryptoKeyObj)
             this.deleting = false
             this.confirmPassword = false
-            this.selectedFile = null
             this.password = null
+            // Clear array for consecutive deletions
+            this.selectedFiles = []
           } else {
             console.error('Invalid Action')
           }
@@ -323,17 +288,14 @@ export default {
         if (!error.response) {
           alert('Network error, try again later!')
           this.confirmPassword = false
-          this.selectedFile = null
           this.password = null
         } else if (error.response.status === 401) {
           alert('Wrong password, try again!')
           this.confirmPassword = false
-          this.selectedFile = null
           this.password = null
         } else if (error.response.status === 500) {
           alert('Server error, try again later!')
           this.confirmPassword = false
-          this.selectedFile = null
           this.password = null
         }
       }

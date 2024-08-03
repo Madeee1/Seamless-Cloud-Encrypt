@@ -40,7 +40,6 @@
 
 <script>
 import { useVaultStore } from '@/stores/vault'
-import { toBase64Url } from '~/utils/encryptionUtils'
 import { encryptFile } from '~/utils/fileEncryptUtils'
 
 export default {
@@ -66,13 +65,14 @@ export default {
       const vaultStore = useVaultStore()
       return vaultStore.key
     },
+    cloudFolderName() {
+      const vaultStore = useVaultStore()
+      return vaultStore.cloudFolderName
+    },
   },
   methods: {
     async handleFileUpload() {
       this.files = Array.from(this.$refs.fileInput.files)
-      const vaultStore = useVaultStore()
-
-      const encoder = new TextEncoder()
 
       let errorBoolean = false
       try {
@@ -107,8 +107,7 @@ export default {
       }
     },
     async uploadFile() {
-      const vaultStore = useVaultStore()
-      const cloudFolderName = vaultStore.cloudFolderName
+      const filesStore = useFilesStore()
 
       // Get Upload Urls for each file
       const response = await $fetch('/api/vault/upload', {
@@ -116,7 +115,7 @@ export default {
         body: {
           files: this.fileNames,
           accessToken: this.accessToken,
-          cloudFolderName: cloudFolderName,
+          cloudFolderName: this.cloudFolderName,
         },
       })
 
@@ -165,20 +164,9 @@ export default {
       this.newFilename = []
       this.filesToUpload = []
       this.fileNames = []
-    },
-    toHexString(byteArray) {
-      return Array.from(byteArray, function (byte) {
-        return ('0' + (byte & 0xff).toString(16)).slice(-2)
-      }).join('')
-    },
-    arrayBufferToBase64(buffer) {
-      let binary = ''
-      const bytes = new Uint8Array(buffer)
-      const len = bytes.byteLength
-      for (let i = 0; i < len; i++) {
-        binary += String.fromCharCode(bytes[i])
-      }
-      return btoa(binary)
+      // Refresh files list to include newly uploaded file
+      await filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
+      await filesStore.previewFilename(this.cryptoKeyObj)
     },
   },
 }
