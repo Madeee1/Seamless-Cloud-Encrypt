@@ -170,27 +170,28 @@ export default {
           throw new Error('Access token not found')
         }
 
-        const response = await $fetch('/api/vault/download', {
-          method: 'POST',
-          body: {
-            accessToken: this.accessToken,
-            fileId: file.id,
-          },
-        })
+        const response = await fetch(
+          `https://graph.microsoft.com/v1.0/me/drive/items/${file.id}/content`,
+          {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${this.accessToken}`,
+            },
+          }
+        )
 
         if (!response.ok) {
-          throw new Error(`Failed to download file: ${response.statusText}`)
+          throw new Error(`Failed to fetch file: ${response.statusText}`)
         }
 
-        const encryptedFileArrayBuffer = base64ToArrayBuffer(
-          response.encryptedBlob
-        )
+        const encryptedFileBlob = await response.blob()
+        const encryptedFileBuffer = await encryptedFileBlob.arrayBuffer()
 
         // Decrypt File here
         console.log('Decrypting ', file.name, '... ')
         const decryptedFile = await decryptFile(
           file.name,
-          encryptedFileArrayBuffer,
+          encryptedFileBuffer,
           this.cryptoKeyObj
         )
 
