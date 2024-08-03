@@ -4,7 +4,7 @@
       variant="link"
       size="xl"
       outlined
-      class="hover:underline underline-offset-4 decoration-[rgb(255,0,0)]"
+      class="hover:underline underline-offset-4 decoration-warning-red"
       @click="openModal"
     >
       <span class="text-gray-200 text-2xl"
@@ -15,14 +15,26 @@
     </UButton>
     <UModal v-model="isModalOpen">
       <div>
-        <UCard>
+        <UCard class="bg-gray-200">
           <template #header>
-            <h1 class="text-xl font-bold">Are you sure you want to log out?</h1>
+            <h1 class="text-xl text-center font-bold text-main-blue">
+              Are you sure you want to
+              <span class="text-third-blue">LOG OUT</span>?
+            </h1>
           </template>
-
-          <div class="flex gap-4">
-            <UButton color="red" @click="logout">Yes</UButton>
-            <UButton @click="isModalOpen = false">No</UButton>
+          <div class="flex justify-center space-x-2">
+            <UButton
+              color="white"
+              class="block text-center w-1/2 text-lg font-semibold text-third-blue"
+              @click="isModalOpen = false"
+              >Nah, I'd Stay</UButton
+            >
+            <UButton
+              color="blue"
+              class="block text-center w-1/2 text-lg font-semibold"
+              @click="logout"
+              >Yea, I'd Leave</UButton
+            >
           </div>
         </UCard>
       </div>

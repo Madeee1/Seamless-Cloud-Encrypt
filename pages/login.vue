@@ -1,25 +1,46 @@
 <template>
-  <div class="flex flex-col min-h-screen bg-main-blue text-gray-200">
+  <div class="flex flex-col min-h-screen bg-main-blue">
     <div>
-      <UCard class="w-[450px] mx-auto mt-8 rounded-2xl bg-gray-200">
+      <UCard class="w-[480px] mx-auto mt-8 rounded-xl bg-gray-200">
         <template #header>
+          <UButton
+            class="mb-1"
+            color="blue"
+            variant="ghost"
+            size="md"
+            icon="i-heroicons-x-mark"
+            @click="navigateTo('/')"
+          />
           <!-- Use Tab to see whether user Signs up or Login -->
-          <UTabs v-model="selectedTab" :items="items" />
+          <UTabs v-model="selectedTab" :items="items">
+            <template #default="{ item, selected }">
+              <span
+                class="truncate"
+                :class="[selected && 'text-third-blue font-bold']"
+                >{{ item.label }}</span
+              >
+            </template>
+          </UTabs>
         </template>
         <UForm
           :schema="schema"
           :state="state"
-          class="space-y-4"
+          class="space-y-3"
           @submit="onSubmit"
         >
-          <UFormGroup label="Email" name="email" class="h-[80px]">
-            <UInput v-model="state.email" placeholder="example@example.com" />
+          <UFormGroup label="Email" name="email" size="xl">
+            <UInput
+              v-model="state.email"
+              placeholder="example@example.com"
+              color="blue"
+            />
           </UFormGroup>
 
-          <UFormGroup label="Password" name="password" class="h-[80px]">
+          <UFormGroup label="Password" name="password" size="xl">
             <UInput
               v-model="state.password"
               type="password"
+              color="blue"
               placeholder="StrongP@ssword101"
             />
           </UFormGroup>
@@ -37,13 +58,13 @@
           <div class="flex">
             <UButton
               type="submit"
-              class="flex-1 w-full bg-second-blue hover:shadow-[5px_3px_0px_rgb(255,0,0)] hover:bg-white hover:text-second-blue active:shadow-[5px_3px_0px_rgb(0,4,30)]"
+              class="block w-full text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded"
             >
               Submit
             </UButton>
           </div>
           <div class="flex">
-            <span class="text-red-500 ml-2 text-sm my-auto">
+            <span class="text-red-500 ml-2 text-md">
               {{ errorMessage }}
             </span>
           </div>
@@ -117,7 +138,7 @@ function toForgotPassword() {
 }
 
 // Login or signup functionality
-const items = [{ label: 'Sign up' }, { label: 'Login' }]
+const items = [{ label: 'Sign up' }, { key: 'login', label: 'Login' }]
 const route = useRoute()
 const router = useRouter()
 
