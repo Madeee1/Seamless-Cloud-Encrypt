@@ -3,6 +3,7 @@
 </template>
 
 <script setup>
+import { encrypt } from '~/utils/encryptionUtils'
 const createVaultStore = useCreateVaultStore()
 const vault = useVaultStore()
 const supabase = useSupabaseClient()
@@ -27,7 +28,6 @@ onBeforeUnmount(() => {
 
 async function refreshAccessToken() {
   try {
-    console.log('refreshing access token')
     const clientID = import.meta.env.VITE_CLIENT_ID
     const redirectUri = import.meta.env.VITE_OD_REDIRECT_URI
     const tenantID = 'common'
@@ -56,7 +56,28 @@ async function refreshAccessToken() {
     const tokenData = await response.json()
     vault.cloudAccessToken = tokenData.access_token
     vault.cloudRefreshToken = tokenData.refresh_token // refresh token if new one is provided
-    vault.tokenExpiresIn = Date.now() + tokenData.expires_in * 1000
+
+    const enc_cloud_access_token = await encrypt(
+      tokenData.access_token,
+      vault.key
+    )
+    const enc_cloud_refresh_token = await encrypt(
+      tokenData.refresh_token,
+      vault.key
+    )
+
+    const newTokenExpiresIn = Date.now() + tokenData.expires_in * 1000
+    vault.tokenExpiresIn = newTokenExpiresIn
+
+    // Update Supabase vault
+    const { error } = await supabase
+      .from('vault')
+      .update({
+        enc_cloud_access_token: enc_cloud_access_token,
+        enc_cloud_refresh_token: enc_cloud_refresh_token,
+        token_expires_in: newTokenExpiresIn,
+      })
+      .eq('id', vault.id)
   } catch (err) {
     throw new Error(`Error refreshing access token: ${err.message}`)
   }
