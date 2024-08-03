@@ -56,6 +56,9 @@
 </template>
 <script>
 import { useVaultStore } from '@/stores/vault'
+import { v4 as uuidv4 } from 'uuid'
+import sha256 from 'crypto-js/sha256'
+import Base64 from 'crypto-js/enc-base64'
 
 export default {
   data() {
@@ -171,11 +174,94 @@ export default {
       return decryptedFile
     },
 
+    async refreshAccessToken() {
+      const vaultStore = useVaultStore()
+
+      if (this.checkTokenRefresh()) {
+        console.log('Refresh token expired, opening reauthentication popup.')
+        await this.reauthenticatePopUp()
+        return // Exit early, reauthentication is handled in the popup
+      }
+
+      try {
+        console.log('refreshing access token')
+        const clientID = import.meta.env.VITE_CLIENT_ID
+        const redirectUri = import.meta.env.VITE_OD_REDIRECT_URI
+        const tenantID = 'common'
+        const tokenURL = `https://login.microsoftonline.com/${tenantID}/oauth2/v2.0/token`
+
+        const response = await fetch(tokenURL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            client_id: clientID,
+            grant_type: 'refresh_token',
+            redirect_uri: redirectUri,
+            refresh_token: vaultStore.cloudRefreshToken,
+          }),
+        })
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          throw new Error(
+            `Failed to refresh access token: ${response.statusText} - ${errorText}`
+          )
+        }
+
+        const tokenData = await response.json()
+        vaultStore.cloudAccessToken = tokenData.access_token
+        vaultStore.cloudRefreshToken = tokenData.refresh_token // refresh token if new one is provided
+        vaultStore.tokenExpiresIn = Date.now() + tokenData.expires_in * 1000
+      } catch (err) {
+        console.error(`Error refreshing access token: ${err.message}`)
+        throw err
+      }
+    },
+
+    async checkTokenRefresh() {
+      let isReauthenticating = false
+      const vaultStore = useVaultStore()
+      const timeLeft = vaultStore.tokenExpiresIn - Date.now()
+
+      if (timeLeft < 5 * 60 * 1000) {
+        // < 5 min refresh
+        if (!isReauthenticating) {
+          console.log('Refresh token expired, opening reauthentication popup.')
+          isReauthenticating = true // Set the flag to true to avoid multiple logs
+          try {
+            await this.reauthenticatePopUp()
+          } catch (err) {
+            console.error('Error during reauthentication:', err)
+          } finally {
+            isReauthenticating = false // Reset the flag after reauthentication
+          }
+          return // Exit early, reauthentication is handled in the popup
+        }
+      } else {
+        try {
+          await this.refreshAccessToken()
+        } catch (err) {
+          console.error('Error during token refresh:', err)
+        }
+      }
+    },
+
     async filesList() {
       const vaultStore = useVaultStore()
       const cloudFolderName = vaultStore.cloudFolderName
 
+      console.log('Access token', this.accessToken)
+
       try {
+        await this.checkTokenRefresh()
+
+        if (!this.accessToken) {
+          const code = await this.reauthenticatePopUp()
+          await this.getAccessToken(code)
+        }
+
         const response = await fetch(
           `https://graph.microsoft.com/v1.0/me/drive/root:/${cloudFolderName}:/children`,
           {
@@ -196,7 +282,6 @@ export default {
 
         for (let i = 0; i < this.files.length; i++) {
           const oriFilename = await this.previewFilename(this.files[i].name)
-
           this.files[i].oriFilename = oriFilename
         }
       } catch (err) {
@@ -207,6 +292,8 @@ export default {
 
     async downloadFile(file) {
       try {
+        await this.checkTokenRefresh() // Ensure token is refreshed
+
         if (!this.accessToken) {
           throw new Error('Access token not found')
         }
@@ -281,12 +368,13 @@ export default {
 
     async confirmDownload() {
       const vault = useVaultStore()
+
       try {
         const response = await $fetch('/api/vault/auth/download', {
           method: 'POST',
           body: {
             password: this.password,
-            vaultId: vault.id,
+            vaultId: vaultStore.id,
           },
         })
 
@@ -305,6 +393,119 @@ export default {
           alert('Server error, try again later!')
         }
       }
+    },
+
+    async reauthenticatePopUp() {
+      // Same as connectToOneDrive() this part
+      try {
+        const clientID = import.meta.env.VITE_CLIENT_ID
+        const redirectUri = import.meta.env.VITE_OD_REDIRECT_URI
+        const scope = 'files.readwrite offline_access'
+        const tenantID = 'common'
+
+        //const state = uuidv4()
+        //const nonce = uuidv4()
+
+        const codeVerifier = await this.generateCodeVerifier()
+        const codeChallenge = await this.generateCodeChallenge(codeVerifier)
+
+        const authURL = `https://login.microsoftonline.com/${tenantID}/oauth2/v2.0/authorize?response_type=code&client_id=${clientID}&redirect_uri=${redirectUri}&scope=${scope}&code_challenge=${codeChallenge}&code_challenge_method=S256&prompt=consent`
+        //const authURL = `https://login.microsoftonline.com/${tenantID}/oauth2/v2.0/authorize?client_id=${clientID}&response_type=code&redirect_uri=${redirectUri}&response_mode=query&scope=${scope}&state=${state}&nonce=${nonce}&code_challenge=${codeChallenge}&code_challenge_method=S256`
+
+        const popup = window.open(authURL, 'authPopup', 'width=600,height=600')
+
+        if (!popup) {
+          throw new Error('Failed to open authentication popup')
+        }
+
+        // Listen for messages from the popup window
+        window.addEventListener('message', async (event) => {
+          if (event.origin !== window.location.origin) return
+
+          const { type, code } = event.data
+          if (type === 'auth_code') {
+            await handleAuthCode(code)
+            window.removeEventListener('message', listener)
+          }
+        })
+      } catch (err) {
+        console.error(`Error opening login popup: ${err.message}`)
+      }
+    },
+
+    // same method as in callback.vue
+    async getAccessToken(code) {
+      const tokenURL = `https://login.microsoftonline.com/common/oauth2/v2.0/token`
+      const codeVerifier = sessionStorage.getItem('code_verifier')
+      if (!codeVerifier) {
+        throw new Error('Code verifier not found in session storage.')
+      }
+
+      const body = new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: import.meta.env.VITE_CLIENT_ID,
+        code: code,
+        redirect_uri: import.meta.env.VITE_OD_REDIRECT_URI,
+        code_verifier: codeVerifier,
+      })
+
+      try {
+        const response = await fetch(tokenURL, {
+          method: 'POST',
+          body: body.toString(),
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`)
+        }
+
+        const data = await response.json()
+        console.log('Access Token:', data.access_token)
+        // Store the access token and use it for subsequent API requests
+        const vaultStore = useVaultStore()
+        vaultStore.cloudAccessToken = data.access_token
+        vaultStore.cloudRefreshToken = data.refresh_token
+        vaultStore.tokenExpiresIn = Date.now() + data.expires_in * 1000
+      } catch (error) {
+        console.error('Error exchanging authorization code:', error)
+      }
+    },
+
+    async handleAuthCode(code) {
+      try {
+        await this.getAccessToken(code) // Assume this method exchanges the code for new tokens
+        console.log('Reauthentication successful')
+        window.location.href = '/vault'
+      } catch (err) {
+        console.error(`Error handling authorization code: ${err.message}`)
+      }
+    },
+
+    async generateCodeVerifier() {
+      try {
+        // Generate a secure random string of 32 bytes
+        const array = new Uint8Array(32)
+        window.crypto.getRandomValues(array)
+        const codeVerifier = Array.from(array, (byte) =>
+          byte.toString(16).padStart(2, '0')
+        ).join('')
+        sessionStorage.setItem('code_verifier', codeVerifier)
+        return codeVerifier
+      } catch (err) {
+        console.error(`Error generating code verifier: ${err.message}`)
+      }
+    },
+
+    async generateCodeChallenge(codeVerifier) {
+      const hash = sha256(codeVerifier)
+      const base64Hash = Base64.stringify(hash)
+      return base64Hash
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '')
     },
   },
 }
