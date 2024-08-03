@@ -47,6 +47,7 @@ async function refreshAccessToken() {
     })
 
     if (!response.ok) {
+      await reAuthenticate()
       const errorText = await response.text()
       throw new Error(
         `Failed to refresh access token: ${response.statusText} - ${errorText}`
@@ -94,8 +95,78 @@ async function checkTokenRefresh() {
     }
   }
 }
+
+async function reAuthenticate() {
+  console.log(
+    'Re-authenticating user for new access token and refresh token... '
+  )
+
+  const tokenURL = `https://login.microsoftonline.com/common/oauth2/v2.0/token`
+  const clientID = import.meta.env.VITE_CLIENT_ID
+  const clientSecret = import.meta.env.CLIENT_SECRET
+  const scope = 'files.readwrite offline_access'
+  const refreshToken = vault.cloudRefreshToken
+  const response = await fetch(tokenURL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: {
+      client_id: clientID,
+      grant_type: 'refresh_token',
+      scope: scope,
+      refresh_token: refreshToken,
+      client_secret: clientSecret,
+    },
+  })
+
+  const tokenResponse = await response.json()
+
+  if (tokenResponse.error) {
+    console.error(tokenResponse.error)
+    throw new Error(
+      'Error during reauthentication: ',
+      tokenResponse.error_description
+    )
+  }
+
+  // Update pinia tokens
+  vault.$patch({
+    cloudAccessToken: tokenResponse.access_token,
+    cloudRefreshToken: tokenResponse.refresh_token,
+  })
+
+  // Update supabase tokens
+  const encryptedAccessToken = await encrypt(
+    tokenResponse.access_token,
+    vault.key
+  )
+
+  const encryptedRefreshToken = await encrypt(
+    tokenResponse.refresh_token,
+    vault.key
+  )
+
+  const { supabaseData, error } = await supabase
+    .from('vault')
+    .update({
+      enc_cloud_access_token: encryptedAccessToken,
+      enc_cloud_refresh_token: encryptedRefreshToken,
+    })
+    .eq('id', vault.id)
+    .eq('user_id', user.value.id)
+    .select()
+
+  if (error) {
+    console.error(error)
+  } else {
+    console.log(supabaseData)
+    vault.$patch({
+      name: supabaseData[0].name,
+    })
+    console.log('Access Token refreshed successfully.\n ')
+  }
+}
 </script>
 
-<style>
-
-</style>
+<style></style>
