@@ -98,7 +98,7 @@ const newPasswordConfirmation = ref('')
 const newKey = ref(null)
 const newAccessToken = ref(null)
 const newRefreshToken = ref(null)
-const downloadedFiles = ref(null)
+const downloadedFiles = ref([])
 const downloadedFileNames = ref([])
 const decryptedFiles = ref([])
 const reencryptedFiles = ref([])
@@ -193,22 +193,58 @@ async function updatePassword() {
 }
 
 async function downloadAll() {
-  // Download all current uploaded files from onedrive
-  const response = await $fetch('/api/vault/downloadAll', {
-    method: 'POST',
-    body: {
-      accessToken: accessToken,
-      cloudFolderName: cloudFolderName,
-    },
-  })
+  // Get folder id to download all files inside
+  const folderId = await getFolderIdByName()
 
-  if (!response.ok) {
-    throw new Error(`Failed to list files: ${response.statusText}`)
+  // Get list of files using folder id
+  const folderResponse = await fetch(
+    `https://graph.microsoft.com/v1.0/me/drive/items/${folderId}/children`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  )
+
+  if (!folderResponse.ok) {
+    throw new Error(
+      `Failed to get folder contents: ${folderResponse.statusText}`
+    )
   }
 
-  downloadedFiles.value = response.files
-  for (let i = 0; i < downloadedFiles.value.length; i++) {
-    downloadedFileNames.value.push(downloadedFiles.value[i].name)
+  const folderData = await folderResponse.json()
+
+  // Download all files from the list of files
+  for (const item of folderData.value) {
+    if (item.file) {
+      // Ensure it's a file
+      const fileResponse = await fetch(
+        `https://graph.microsoft.com/v1.0/me/drive/items/${item.id}/content`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+
+      if (!fileResponse.ok) {
+        throw new Error(
+          `Failed to download file: ${item.name} - ${fileResponse.statusText}`
+        )
+      }
+
+      const encryptedFilename = item.name
+      const encryptedFileBlob = await fileResponse.blob()
+      const encryptedFileBuffer = await encryptedFileBlob.arrayBuffer()
+      downloadedFiles.value.push({
+        name: encryptedFilename,
+        content: encryptedFileBuffer,
+      })
+      downloadedFileNames.value.push(encryptedFilename)
+    }
   }
 
   console.log('All files downloaded successfully.\n ')
@@ -218,10 +254,9 @@ async function decryptAll() {
   try {
     const decryptionTasks = downloadedFiles.value.map(async (file) => {
       // decrypt all downloaded files
-      const fileContentBuffer = base64ToArrayBuffer(file.content)
       const decryptedFile = await decryptFile(
         file.name,
-        fileContentBuffer,
+        file.content,
         cryptoKeyObj
       )
 
@@ -387,5 +422,33 @@ async function uploadAll() {
   } catch (err) {
     console.error('Error during files upload.')
   }
+}
+
+async function getFolderIdByName() {
+  const response = await fetch(
+    'https://graph.microsoft.com/v1.0/me/drive/root/children',
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`Failed to list folder contents: ${response.statusText}`)
+  }
+
+  const data = await response.json()
+  const folder = data.value.find(
+    (folder) => folder.name === cloudFolderName && folder.folder
+  )
+
+  if (!folder) {
+    throw new Error(`Folder not found: ${cloudFolderName}`)
+  }
+
+  return folder.id
 }
 </script>
