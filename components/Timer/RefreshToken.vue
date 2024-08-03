@@ -106,27 +106,28 @@ async function reAuthenticate() {
   const clientSecret = import.meta.env.CLIENT_SECRET
   const scope = 'files.readwrite offline_access'
   const refreshToken = vault.cloudRefreshToken
+  const params = new URLSearchParams({
+    client_id: clientID,
+    grant_type: 'refresh_token',
+    scope: scope,
+    refresh_token: refreshToken,
+    client_secret: clientSecret,
+  })
+
   const response = await fetch(tokenURL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: {
-      client_id: clientID,
-      grant_type: 'refresh_token',
-      scope: scope,
-      refresh_token: refreshToken,
-      client_secret: clientSecret,
-    },
+    body: params.toString(),
   })
 
   const tokenResponse = await response.json()
 
-  if (tokenResponse.error) {
+  if (!response.ok) {
     console.error(tokenResponse.error)
     throw new Error(
-      'Error during reauthentication: ',
-      tokenResponse.error_description
+      `Error during reauthentication: ${tokenResponse.error_description || 'Unknown error'}`
     )
   }
 
@@ -134,6 +135,7 @@ async function reAuthenticate() {
   vault.$patch({
     cloudAccessToken: tokenResponse.access_token,
     cloudRefreshToken: tokenResponse.refresh_token,
+    tokenExpiresIn: tokenResponse.expires_in,
   })
 
   // Update supabase tokens
@@ -164,7 +166,7 @@ async function reAuthenticate() {
     vault.$patch({
       name: supabaseData[0].name,
     })
-    console.log('Access Token refreshed successfully.\n ')
+    console.log('Re-authentication successful.\n ')
   }
 }
 </script>
