@@ -170,18 +170,6 @@ export default {
           throw new Error('Access token not found')
         }
 
-        // const response = await $fetch('/api/vault/download', {
-        //   method: 'POST',
-        //   body: {
-        //     accessToken: this.accessToken,
-        //     fileId: file.id,
-        //   },
-        // })
-
-        // if (!response.ok) {
-        //   throw new Error(`Failed to download file: ${response.statusText}`)
-        // }
-
         const response = await fetch(
           `https://graph.microsoft.com/v1.0/me/drive/items/${file.id}/content`,
           {
