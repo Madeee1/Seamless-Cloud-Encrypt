@@ -52,24 +52,27 @@ const supabase = useSupabaseClient()
 const user = useSupabaseUser()
 
 const vault = useVaultStore()
+const cloudFolderName = vault.cloudFolderName
+const accessToken = vault.cloudAccessToken
 
 const confirmPassword = ref(false)
 const password = ref('')
 
 async function confirmDelete() {
   try {
-    const response = await $fetch('/api/vault/delete/auth', {
-      method: 'POST',
-      body: {
-        password: password.value,
-        vaultId: vault.id,
-      },
-    })
+    const folderId = await getFolderIdByName()
 
-    if (response.ok) {
-      vault.$reset()
-      navigateTo('/dashboard')
-    }
+    // Delete supabase vault
+    await deleteSupabaseVault()
+
+    // Delete cloud folder
+    await deleteCloudFolder(folderId)
+
+    // Navigate back to dashboard
+    console.log('Vault Deleted Successfully.')
+    alert('Vault Deleted Successfully.')
+    vault.$reset()
+    navigateTo('/dashboard')
   } catch (error) {
     if (!error.response) {
       alert('Network error, try again later!')
@@ -79,5 +82,71 @@ async function confirmDelete() {
       alert('Server error, try again later!')
     }
   }
+}
+
+async function deleteSupabaseVault() {
+  console.log('Deleting supabase vault ', vault.id)
+  const response = await $fetch('/api/vault/delete/auth', {
+    method: 'POST',
+    body: {
+      password: password.value,
+      vaultId: vault.id,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error('Error deleting supabase vault.')
+  }
+
+  console.log('Supabase folder deleted successfully.')
+}
+
+async function deleteCloudFolder(folderId) {
+  console.log('Deleting cloud folder ', cloudFolderName)
+  const response = await fetch(
+    `https://graph.microsoft.com/v1.0/me/drive/items/${folderId}`,
+    {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error('Error deleting cloud folder.')
+  }
+
+  console.log('Cloud folder deleted successfully.')
+}
+
+async function getFolderIdByName() {
+  const response = await fetch(
+    'https://graph.microsoft.com/v1.0/me/drive/root/children',
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to get folder id by folder name: ${response.statusText}`
+    )
+  }
+
+  const data = await response.json()
+  const folder = data.value.find(
+    (folder) => folder.name === cloudFolderName && folder.folder
+  )
+
+  if (!folder) {
+    throw new Error(`Folder not found: ${cloudFolderName}`)
+  }
+
+  return folder.id
 }
 </script>
