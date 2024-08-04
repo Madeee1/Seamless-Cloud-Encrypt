@@ -10,6 +10,8 @@ const supabase = useSupabaseClient()
 const user = useSupabaseUser()
 
 const intervalId = ref('')
+const errorMessage = ref('')
+const refreshToken = ref(vault.cloudRefreshToken)
 
 onMounted(() => {
   if (vault.tokenExpiresIn) {
@@ -42,12 +44,13 @@ async function refreshAccessToken() {
         client_id: clientID,
         grant_type: 'refresh_token',
         redirect_uri: redirectUri,
-        refresh_token: vault.cloudRefreshToken,
+        refresh_token: refreshToken.value,
       }),
     })
 
     if (!response.ok) {
-      await reAuthenticate()
+      // await reAuthenticate()
+      // connectToOneDrive()
       const errorText = await response.text()
       throw new Error(
         `Failed to refresh access token: ${response.statusText} - ${errorText}`
@@ -84,12 +87,29 @@ async function refreshAccessToken() {
   }
 }
 
+function connectToOneDrive() {
+  try {
+    const clientID = import.meta.env.VITE_CLIENT_ID
+    const redirectUri = import.meta.env.VITE_OD_REDIRECT_URI
+    const scope = 'files.readwrite offline_access' // perm. app req.; offline_access - allow app 2 receive refresh tokens 2 obtain new access tokens w/o user having to sign in again
+    const tenantID = 'common'
+
+    // Generate PKCE code verifier & code challenge
+    const codeChallenge = sessionStorage.getItem('codeChallenge')
+
+    const authURL = `https://login.microsoftonline.com/${tenantID}/oauth2/v2.0/authorize?response_type=code&client_id=${clientID}&redirect_uri=${redirectUri}&scope=${scope}&code_challenge=${codeChallenge}&code_challenge_method=S256&prompt=consent`
+    window.location.href = authURL // 2 redirect user 2 auth. url ;prop. of window.locn obj that get/sets url of current page
+  } catch (err) {
+    errorMessage.value = `Error connecting to OneDrive: ${err}`
+  }
+}
+
 async function checkTokenRefresh() {
   const timeLeft = vault.tokenExpiresIn - Date.now()
   if (timeLeft < 5 * 60 * 1000) {
     // < 5 min refresh
     try {
-      await refreshAccessToken()
+      await reAuthenticate()
     } catch (err) {
       console.error(err)
     }
@@ -125,6 +145,7 @@ async function reAuthenticate() {
   const tokenResponse = await response.json()
 
   if (!response.ok) {
+    connectToOneDrive()
     console.error(tokenResponse.error)
     throw new Error(
       `Error during reauthentication: ${tokenResponse.error_description || 'Unknown error'}`
