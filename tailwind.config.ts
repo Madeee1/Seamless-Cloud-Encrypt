@@ -37,34 +37,29 @@ export default {
         wave1: "url('/img/wave1.svg')",
         wave2: "url('/img/wave2.svg')",
         wave3: "url('/img/wave3.svg')",
+        showcase: "url('/img/showcase.png')",
         'custom-gradient':
           'linear-gradient(to right, #00041e 95%, #154c79 100%)',
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.5s ease-out forwards',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': {
+            opacity: '0',
+            transform: 'translateY(20px)',
+          },
+          '100%': {
+            opacity: '1',
+            transform: 'translateY(0)',
+          },
+        },
       },
     },
   },
   plugins: [
-    function ({ addUtilities, theme, e }) {
-      const textStrokeWidth = theme('textStrokeWidth', {})
-      const textStrokeColor = theme('textStrokeColor', {})
-
-      const utilities = {}
-
-      for (const key in textStrokeWidth) {
-        utilities[`.${e(`text-stroke-${key}`)}`] = {
-          WebkitTextStrokeWidth: textStrokeWidth[key],
-          textStrokeWidth: textStrokeWidth[key],
-        }
-      }
-
-      for (const key in textStrokeColor) {
-        const value = textStrokeColor[key]
-
-        utilities[`.${e(`text-stroke-${key}`)}`] = {
-          WebkitTextStrokeColor: value,
-          textStrokeColor: value,
-        }
-      }
-
+    function ({ addUtilities }) {
       const newUtilities = {
         '.scrollbar-hidden': {
           '-ms-overflow-style': 'none' /* IE and Edge */,
@@ -76,7 +71,6 @@ export default {
       }
 
       addUtilities(newUtilities, ['responsive', 'hover'])
-      addUtilities(utilities, ['responsive', 'hover'])
     },
   ],
 } satisfies Config
