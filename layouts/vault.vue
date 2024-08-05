@@ -19,14 +19,34 @@
       <div class="flex flex-1">
         <!-- Sidebar -->
         <SideBar>
-          <UVerticalNavigation :links="links">
-            <template #default="{ link }">
-              <span
-                class="group-hover:text-third-blue text-third-blue relative"
-                >{{ link.label }}</span
+          <div>
+            <dl class="w-full">
+              <div
+                class="mb-3 mt-2 mx-3 flex items-center bg-transparent border border-third-blue p-1 px-2 rounded hover:bg-gray-700 focus:bg-gray-200 focus:shadow-[5px_-3px_0px_rgb(255,0,0)] focus:outline-none focus:ml-0 focus:rounded-l-none transition-all duration-150 ease-in-out cursor-pointer"
+                tabindex="0"
+                @click="navigateTo('/dashboard/vault')"
               >
-            </template>
-          </UVerticalNavigation>
+                <UIcon
+                  name="i-heroicons-lock-closed-solid"
+                  class="text-third-blue"
+                />
+                <dd class="ml-2 flex-1 text-third-blue text-semibold">Vault</dd>
+              </div>
+              <div
+                class="mx-3 flex items-center bg-transparent border border-third-blue p-1 px-2 rounded hover:bg-gray-700 focus:bg-gray-200 focus:shadow-[5px_-3px_0px_rgb(255,0,0)] focus:outline-none focus:ml-0 focus:rounded-l-none transition-all duration-150 ease-in-out cursor-pointer"
+                tabindex="0"
+                @click="navigateTo('/dashboard/vault/settings')"
+              >
+                <UIcon
+                  name="i-heroicons-cog-6-tooth-solid"
+                  class="text-third-blue"
+                />
+                <dd class="ml-2 flex-1 text-third-blue text-semibold">
+                  Settings
+                </dd>
+              </div>
+            </dl>
+          </div>
           <div class="flex-grow"></div>
           <UButton
             block
@@ -53,19 +73,4 @@ function lockAndExit() {
   vault.$reset()
   navigateTo('/dashboard')
 }
-
-const links = [
-  [
-    {
-      label: 'Vault',
-      icon: 'i-heroicons-lock-closed',
-      to: '/dashboard/vault',
-    },
-    {
-      label: 'Settings',
-      icon: 'i-heroicons-cog-8-tooth',
-      to: '/dashboard/vault/settings',
-    },
-  ],
-]
 </script>
