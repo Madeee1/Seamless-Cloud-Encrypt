@@ -122,28 +122,32 @@ export default {
     }
   },
   computed: {
+    vaultStore() {
+      return useVaultStore()
+    },
+    filesStore() {
+      return useFilesStore()
+    },
     accessToken() {
-      const vaultStore = useVaultStore()
-      return vaultStore.cloudAccessToken
+      return this.vaultStore.cloudAccessToken
     },
     cryptoKeyObj() {
-      const vaultStore = useVaultStore()
-      return vaultStore.key
+      return this.vaultStore.key
     },
     cloudFolderName() {
-      const vaultStore = useVaultStore()
-      return vaultStore.cloudFolderName
+      return this.vaultStore.cloudFolderName
     },
     files() {
-      const filesStore = useFilesStore()
-      return filesStore.files
+      return this.filesStore.files
     },
   },
   async mounted() {
     // this.filesList()
-    const filesStore = useFilesStore()
-    await filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
-    await filesStore.previewFilename(this.cryptoKeyObj)
+    await this.filesStore.refreshFilesList(
+      this.cloudFolderName,
+      this.accessToken
+    )
+    await this.filesStore.previewFilename(this.cryptoKeyObj)
   },
   methods: {
     downloadSelected() {
