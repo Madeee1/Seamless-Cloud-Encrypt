@@ -32,6 +32,7 @@ onBeforeUnmount(() => {
   clearInterval(intervalId.value)
 })
 
+// replaced with reAuthenticate?
 async function refreshAccessToken() {
   try {
     const clientID = import.meta.env.VITE_CLIENT_ID
@@ -53,8 +54,6 @@ async function refreshAccessToken() {
     })
 
     if (!response.ok) {
-      // await reAuthenticate()
-      // connectToOneDrive()
       const errorText = await response.text()
       throw new Error(
         `Failed to refresh access token: ${response.statusText} - ${errorText}`
@@ -121,15 +120,7 @@ function connectToOneDrive() {
 
     // Generate PKCE code verifier & code challenge
     const codeVerifier = generateCodeVerifier()
-    console.log('generated code verifier = ', codeVerifier)
     const newcodeChallenge = generateCodeChallenge(codeVerifier)
-    const createcodeChallenge = sessionStorage.getItem('codeChallenge')
-
-    console.log('New code challenge = ')
-    console.log(newcodeChallenge)
-
-    console.log('Code challenge from create vault = ')
-    console.log(createcodeChallenge)
 
     const authURL = `https://login.microsoftonline.com/${tenantID}/oauth2/v2.0/authorize?response_type=code&client_id=${clientID}&redirect_uri=${redirectUri}&scope=${scope}&code_challenge=${newcodeChallenge}&code_challenge_method=S256&prompt=consent`
     window.location.href = authURL // 2 redirect user 2 auth. url ;prop. of window.locn obj that get/sets url of current page
@@ -147,7 +138,7 @@ async function checkTokenRefresh() {
       await reAuthenticate()
     } catch (err) {
       console.error(err)
-      // connectToOneDrive()
+      connectToOneDrive()
     }
   }
 }
@@ -159,7 +150,6 @@ async function reAuthenticate() {
 
   const tokenURL = `https://login.microsoftonline.com/common/oauth2/v2.0/token`
   const clientID = import.meta.env.VITE_CLIENT_ID
-  const clientSecret = import.meta.env.CLIENT_SECRET
   const scope = 'files.readwrite offline_access'
   const refreshToken = vault.cloudRefreshToken
   const params = new URLSearchParams({
@@ -180,9 +170,7 @@ async function reAuthenticate() {
   const tokenResponse = await response.json()
 
   if (!response.ok) {
-    console.log('response is not ok')
     sessionStorage.setItem('vaultID', vault.id)
-    connectToOneDrive()
     console.error(tokenResponse.error)
     throw new Error(
       `Error during reauthentication: ${tokenResponse.error_description || 'Unknown error'}`

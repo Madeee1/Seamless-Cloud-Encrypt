@@ -228,7 +228,6 @@ async function renewAccessToken(code) {
     if (error) {
       console.error(error)
     } else {
-      console.log(supabaseData)
       console.log('Access tokens renewed successfully.\n ')
     }
 

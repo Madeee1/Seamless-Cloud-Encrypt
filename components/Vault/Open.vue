@@ -64,7 +64,6 @@ async function openVault() {
     })
 
     if (response.ok) {
-      console.log('server response is ok')
       const encryptionKeyObject = await deriveKeyFromPassword(password.value)
 
       try {
@@ -88,10 +87,6 @@ async function openVault() {
       if (!accessToken || !refreshToken) {
         console.error('Error during decryptions?')
       }
-
-      console.log(accessToken)
-
-      console.log(refreshToken)
 
       sessionStorage.setItem('vaultID', response.data.id)
       sessionStorage.setItem('vaultKey', password.value)
