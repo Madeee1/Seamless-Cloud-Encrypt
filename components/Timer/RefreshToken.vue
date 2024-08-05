@@ -4,6 +4,10 @@
 
 <script setup>
 import { encrypt } from '~/utils/encryptionUtils'
+import { v4 as uuidv4 } from 'uuid'
+import sha256 from 'crypto-js/sha256'
+import Base64 from 'crypto-js/enc-base64'
+
 const createVaultStore = useCreateVaultStore()
 const vault = useVaultStore()
 const supabase = useSupabaseClient()
@@ -87,7 +91,28 @@ async function refreshAccessToken() {
   }
 }
 
+function generateCodeVerifier() {
+  try {
+    const codeVerifier = uuidv4() + uuidv4() + uuidv4() + uuidv4()
+    sessionStorage.setItem('code_verifier', codeVerifier) // store code ver. in session storage
+    return codeVerifier
+  } catch (err) {
+    errorMessage.value = `Error generating code verifier: ${err.message}`
+  }
+}
+
+function generateCodeChallenge(codeVerifier) {
+  try {
+    const hash = sha256(codeVerifier)
+    const base64Hash = Base64.stringify(hash)
+    return base64Hash.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  } catch (err) {
+    errorMessage.value = `Error generating code challenge: ${err.message}`
+  }
+}
+
 function connectToOneDrive() {
+  console.log('connect to onedrive is running')
   try {
     const clientID = import.meta.env.VITE_CLIENT_ID
     const redirectUri = import.meta.env.VITE_OD_REDIRECT_URI
@@ -95,11 +120,21 @@ function connectToOneDrive() {
     const tenantID = 'common'
 
     // Generate PKCE code verifier & code challenge
-    const codeChallenge = sessionStorage.getItem('codeChallenge')
+    const codeVerifier = generateCodeVerifier()
+    console.log('generated code verifier = ', codeVerifier)
+    const newcodeChallenge = generateCodeChallenge(codeVerifier)
+    const createcodeChallenge = sessionStorage.getItem('codeChallenge')
 
-    const authURL = `https://login.microsoftonline.com/${tenantID}/oauth2/v2.0/authorize?response_type=code&client_id=${clientID}&redirect_uri=${redirectUri}&scope=${scope}&code_challenge=${codeChallenge}&code_challenge_method=S256&prompt=consent`
+    console.log('New code challenge = ')
+    console.log(newcodeChallenge)
+
+    console.log('Code challenge from create vault = ')
+    console.log(createcodeChallenge)
+
+    const authURL = `https://login.microsoftonline.com/${tenantID}/oauth2/v2.0/authorize?response_type=code&client_id=${clientID}&redirect_uri=${redirectUri}&scope=${scope}&code_challenge=${newcodeChallenge}&code_challenge_method=S256&prompt=consent`
     window.location.href = authURL // 2 redirect user 2 auth. url ;prop. of window.locn obj that get/sets url of current page
   } catch (err) {
+    console.error(err)
     errorMessage.value = `Error connecting to OneDrive: ${err}`
   }
 }
@@ -112,6 +147,7 @@ async function checkTokenRefresh() {
       await reAuthenticate()
     } catch (err) {
       console.error(err)
+      // connectToOneDrive()
     }
   }
 }
@@ -131,7 +167,6 @@ async function reAuthenticate() {
     grant_type: 'refresh_token',
     scope: scope,
     refresh_token: refreshToken,
-    client_secret: clientSecret,
   })
 
   const response = await fetch(tokenURL, {
@@ -145,6 +180,8 @@ async function reAuthenticate() {
   const tokenResponse = await response.json()
 
   if (!response.ok) {
+    console.log('response is not ok')
+    sessionStorage.setItem('vaultID', vault.id)
     connectToOneDrive()
     console.error(tokenResponse.error)
     throw new Error(
@@ -183,10 +220,6 @@ async function reAuthenticate() {
   if (error) {
     console.error(error)
   } else {
-    console.log(supabaseData)
-    vault.$patch({
-      name: supabaseData[0].name,
-    })
     console.log('Re-authentication successful.\n ')
   }
 }

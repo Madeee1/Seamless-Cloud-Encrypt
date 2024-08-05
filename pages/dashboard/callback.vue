@@ -232,6 +232,8 @@ async function renewAccessToken(code) {
       console.log('Access tokens renewed successfully.\n ')
     }
 
+    sessionStorage.setItem('vaultID', null)
+    sessionStorage.setItem('vaultKey', null)
     navigateTo('/dashboard')
   } catch (err) {
     error.value = `Error obtaining access token: ${err.message}`
