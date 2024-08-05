@@ -138,6 +138,7 @@ async function checkTokenRefresh() {
       await reAuthenticate()
     } catch (err) {
       console.error(err)
+      sessionStorage.setItem('vaultID', vault.id)
       connectToOneDrive()
     }
   }
@@ -170,7 +171,6 @@ async function reAuthenticate() {
   const tokenResponse = await response.json()
 
   if (!response.ok) {
-    sessionStorage.setItem('vaultID', vault.id)
     console.error(tokenResponse.error)
     throw new Error(
       `Error during reauthentication: ${tokenResponse.error_description || 'Unknown error'}`

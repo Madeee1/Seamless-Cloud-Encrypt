@@ -56,6 +56,7 @@ onMounted(async () => {
   }
 
   if (!sessionStorage.getItem('vaultID')) {
+    console.log('Creating new vault... ')
     handleCallback()
   } else {
     const URLparams = new URLSearchParams(window.location.search)
@@ -228,11 +229,11 @@ async function renewAccessToken(code) {
     if (error) {
       console.error(error)
     } else {
-      console.log('Access tokens renewed successfully.\n ')
+      console.log('Access tokens renewed successfully.')
     }
 
-    sessionStorage.setItem('vaultID', null)
-    sessionStorage.setItem('vaultKey', null)
+    sessionStorage.removeItem('vaultID')
+    sessionStorage.removeItem('vaultKey')
     navigateTo('/dashboard')
   } catch (err) {
     error.value = `Error obtaining access token: ${err.message}`

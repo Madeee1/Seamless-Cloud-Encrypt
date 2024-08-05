@@ -88,7 +88,6 @@ async function openVault() {
         console.error('Error during decryptions?')
       }
 
-      sessionStorage.setItem('vaultID', response.data.id)
       sessionStorage.setItem('vaultKey', password.value)
       vault.$patch({
         key: encryptionKeyObject,
