@@ -6,14 +6,63 @@
       >
         Download the files you have encrypted in the vault
       </h1>
-      <div v-if="confirmPassword" class="mb-3 first-letter:text-third-blue">
+      <div class="flex justify-between">
+        <div class="flex space-x-4 flex-1 max-w-sm">
+          <button
+            class="block w-full text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded mb-4"
+            @click="(confirmPassword = true), (deleting = false)"
+          >
+            Download
+          </button>
+          <button
+            class="block w-full text-lg font-semibold bg-warning-red hover:bg-red-600 text-gray-200 py-1 px-2 rounded mb-4"
+            @click="(confirmPassword = true), (deleting = true)"
+          >
+            Delete
+          </button>
+        </div>
+        <button
+          class="block w-1/6 text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded mb-4"
+          @click="refreshFilesList"
+        >
+          Refresh Files List
+        </button>
+      </div>
+      <div
+        class="h-64 overflow-y-scroll scrollbar-hidden bg-white bg-opacity-15 p-4 rounded"
+      >
+        <ul class="list-disc list-inside space-y-2">
+          <li
+            v-for="file in files"
+            :key="file.id"
+            class="flex items-center justify-between bg-gray-100 p-2 rounded mb-2 gap-2"
+          >
+            <input v-model="selectedFiles" type="checkbox" :value="file" />
+            <div class="flex items-center">
+              <img
+                v-if="file.thumbnailUrl"
+                :src="file.thumbnailUrl"
+                alt="Thumbnail"
+                class="w-10 h-10 mr-4 rounded"
+              />
+              <span class="font-medium">
+                {{ file.oriFilename }}
+              </span>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div
+        v-if="confirmPassword"
+        class="pt-3 mb-3 first-letter:text-third-blue"
+      >
         <label
           for="confirm-password"
           class="text-xl font-semibold text-gray-200"
           >{{
             deleting
-              ? 'Confirm Password to Delete Files:'
-              : 'Confirm Password to Download Files:'
+              ? 'Confirm Password to Delete Files'
+              : 'Confirm Password to Download Files'
           }}</label
         >
         <input
@@ -21,65 +70,24 @@
           v-model="password"
           type="password"
           placeholder="Enter vault password"
-          class="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
+          class="mt-1 w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
         />
-        <UButton
-          class="mx-4 mt-4"
-          @click="
-            deleting ? confirmAction('delete') : confirmAction('download')
-          "
-          >Confirm</UButton
-        >
-        <UButton
-          class="bg-red-500 hover:bg-red-700 mx-4 mt-4"
-          @click="(confirmPassword = false), (password = null)"
-          >Cancel</UButton
-        >
-        <br />
-        <br />
+        <div class="pt-4 flex justify-end space-x-2">
+          <UButton
+            class="block text-center w-1/6 text-lg font-semibold bg-white hover:bg-gray-200 text-second-blue py-1 px-2 rounded"
+            @click="(confirmPassword = false), (password = null)"
+            >Cancel</UButton
+          >
+          <UButton
+            class="block text-center w-1/6 text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded"
+            @click="
+              deleting ? confirmAction('delete') : confirmAction('download')
+            "
+            >Confirm</UButton
+          >
+        </div>
       </div>
     </div>
-    <button
-      class="block w-1/6 text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded mb-4"
-      @click="refreshFilesList"
-    >
-      Refresh Files List
-    </button>
-    <br />
-    <div class="flex space-x-5">
-      <button
-        class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4 w-full"
-        @click="(confirmPassword = true), (deleting = false)"
-      >
-        Download
-      </button>
-      <button
-        class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mb-4 w-full"
-        @click="(confirmPassword = true), (deleting = true)"
-      >
-        Delete
-      </button>
-    </div>
-    <ul>
-      <li
-        v-for="file in files"
-        :key="file.id"
-        class="flex items-center justify-between bg-gray-100 p-2 rounded mb-2 gap-2"
-      >
-        <input v-model="selectedFiles" type="checkbox" :value="file" />
-        <div class="flex items-center">
-          <img
-            v-if="file.thumbnailUrl"
-            :src="file.thumbnailUrl"
-            alt="Thumbnail"
-            class="w-10 h-10 mr-4 rounded"
-          />
-          <span class="font-medium">
-            {{ file.oriFilename }}
-          </span>
-        </div>
-      </li>
-    </ul>
     <div class="w-full px-10 ml-5 pt-3">
       <div
         v-if="error"
@@ -114,28 +122,32 @@ export default {
     }
   },
   computed: {
+    vaultStore() {
+      return useVaultStore()
+    },
+    filesStore() {
+      return useFilesStore()
+    },
     accessToken() {
-      const vaultStore = useVaultStore()
-      return vaultStore.cloudAccessToken
+      return this.vaultStore.cloudAccessToken
     },
     cryptoKeyObj() {
-      const vaultStore = useVaultStore()
-      return vaultStore.key
+      return this.vaultStore.key
     },
     cloudFolderName() {
-      const vaultStore = useVaultStore()
-      return vaultStore.cloudFolderName
+      return this.vaultStore.cloudFolderName
     },
     files() {
-      const filesStore = useFilesStore()
-      return filesStore.files
+      return this.filesStore.files
     },
   },
   async mounted() {
     // this.filesList()
-    const filesStore = useFilesStore()
-    await filesStore.refreshFilesList(this.cloudFolderName, this.accessToken)
-    await filesStore.previewFilename(this.cryptoKeyObj)
+    await this.filesStore.refreshFilesList(
+      this.cloudFolderName,
+      this.accessToken
+    )
+    await this.filesStore.previewFilename(this.cryptoKeyObj)
   },
   methods: {
     downloadSelected() {

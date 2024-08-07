@@ -49,6 +49,8 @@ definePageMeta({
 })
 
 const password = ref('')
+const accessToken = ref(null)
+const refreshToken = ref(null)
 const vault = useVaultStore()
 
 async function openVault() {
@@ -63,15 +65,30 @@ async function openVault() {
 
     if (response.ok) {
       const encryptionKeyObject = await deriveKeyFromPassword(password.value)
-      const accessToken = await decrypt(
-        response.data.enc_cloud_access_token,
-        encryptionKeyObject
-      )
-      const refreshToken = await decrypt(
-        response.data.enc_cloud_refresh_token,
-        encryptionKeyObject
-      )
 
+      try {
+        accessToken.value = await decrypt(
+          response.data.enc_cloud_access_token,
+          encryptionKeyObject
+        )
+      } catch (error) {
+        console.error('error during access token decryption')
+      }
+
+      try {
+        refreshToken.value = await decrypt(
+          response.data.enc_cloud_refresh_token,
+          encryptionKeyObject
+        )
+      } catch (error) {
+        console.error('error during refresh token decryption')
+      }
+
+      if (!accessToken || !refreshToken) {
+        console.error('Error during decryptions?')
+      }
+
+      sessionStorage.setItem('vaultKey', password.value)
       vault.$patch({
         key: encryptionKeyObject,
         name: response.data.name,
@@ -89,6 +106,7 @@ async function openVault() {
       navigateTo('/dashboard/vault')
     }
   } catch (error) {
+    console.error(error)
     if (!error.response) {
       alert('Network error, try again later!')
     } else if (error.response.status === 401) {
