@@ -66,7 +66,9 @@ async function confirmDelete() {
     await deleteSupabaseVault()
 
     // Delete cloud folder
-    await deleteCloudFolder(folderId)
+    if (folderId) {
+      await deleteCloudFolder(folderId)
+    }
 
     // Navigate back to dashboard
     console.log('Vault Deleted Successfully.')
@@ -75,6 +77,7 @@ async function confirmDelete() {
     navigateTo('/dashboard')
   } catch (error) {
     if (!error.response) {
+      console.error(error)
       alert('Network error, try again later!')
     } else if (error.response.status === 401) {
       alert('Wrong password, try again!')
@@ -114,10 +117,10 @@ async function deleteCloudFolder(folderId) {
   )
 
   if (!response.ok) {
-    throw new Error('Error deleting cloud folder.')
+    throw new Error(`Failed to delete cloud folder: ${response.statusText}`)
+  } else {
+    console.log('Cloud folder deleted successfully.')
   }
-
-  console.log('Cloud folder deleted successfully.')
 }
 
 async function getFolderIdByName() {
@@ -144,9 +147,10 @@ async function getFolderIdByName() {
   )
 
   if (!folder) {
-    throw new Error(`Folder not found: ${cloudFolderName}`)
+    console.log('No cloud folder to delete.')
+    return null
+  } else {
+    return folder.id
   }
-
-  return folder.id
 }
 </script>

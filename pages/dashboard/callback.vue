@@ -25,11 +25,13 @@ const createVaultStore = useCreateVaultStore()
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
 
+const vault = useVaultStore()
+
 // TODO: CHANGE AFTER
 const accessToken = ref('')
 const refreshToken = ref('')
 const connected = ref(false)
-onMounted(() => {
+onMounted(async () => {
   async function handleCallback() {
     try {
       // Access token area
@@ -53,7 +55,14 @@ onMounted(() => {
     }
   }
 
-  handleCallback()
+  if (!sessionStorage.getItem('vaultID')) {
+    console.log('Creating new vault... ')
+    handleCallback()
+  } else {
+    const URLparams = new URLSearchParams(window.location.search)
+    const code = URLparams.get('code')
+    await renewAccessToken(code)
+  }
 })
 
 // Functions on vault creation
@@ -151,6 +160,81 @@ async function getAccessToken(code) {
     connected.value = true
     // clean url of its parameters without cleaning the /dashboard/callback
     window.history.replaceState({}, document.title, '/dashboard/callback')
+  } catch (err) {
+    error.value = `Error obtaining access token: ${err.message}`
+    console.error('Error details:', err) // Log detailed error information
+  }
+}
+
+async function renewAccessToken(code) {
+  console.log('renewAccessToken is running')
+  try {
+    const clientID = import.meta.env.VITE_CLIENT_ID
+    const redirectUri = import.meta.env.VITE_OD_REDIRECT_URI
+    const tenantID = 'common'
+    const tokenURL = `https://login.microsoftonline.com/${tenantID}/oauth2/v2.0/token` // where exchange takes place
+    const codeVerifier = sessionStorage.getItem('code_verifier')
+
+    if (!codeVerifier) {
+      throw new Error('Code verifier not found in session storage.')
+    }
+
+    console.log('Requesting access token with code:', code) // debugging: Log the authorization code
+
+    // send HTTP POST req. 2 tokenURL & wait 4 response
+    const response = await $fetch(tokenURL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded', // Set CT header to that, indic8 req. body is url encoded
+      },
+      body: new URLSearchParams({
+        // construct req. body as URL encoded param.
+        client_id: clientID,
+        code: code,
+        grant_type: 'authorization_code',
+        redirect_uri: redirectUri,
+        code_verifier: codeVerifier,
+      }),
+    })
+
+    if (!response.access_token) {
+      const errorText = await response.text()
+      throw new Error(
+        `Failed to obtain access token: ${response.statusText} - ${errorText}`
+      )
+    }
+
+    const vaultPassword = sessionStorage.getItem('vaultKey')
+    const vaultKey = await deriveKeyFromPassword(vaultPassword)
+    const vaultID = sessionStorage.getItem('vaultID')
+
+    const encryptedAccessToken = await encrypt(response.access_token, vaultKey)
+
+    const encryptedRefreshToken = await encrypt(
+      response.refresh_token,
+      vaultKey
+    )
+
+    const { supabaseData, error } = await supabase
+      .from('vault')
+      .update({
+        enc_cloud_access_token: encryptedAccessToken,
+        enc_cloud_refresh_token: encryptedRefreshToken,
+        token_expires_in: Date.now() + response.expires_in * 1000,
+      })
+      .eq('id', vaultID)
+      .eq('user_id', user.value.id)
+      .select()
+
+    if (error) {
+      console.error(error)
+    } else {
+      console.log('Access tokens renewed successfully.')
+    }
+
+    sessionStorage.removeItem('vaultID')
+    sessionStorage.removeItem('vaultKey')
+    navigateTo('/dashboard')
   } catch (err) {
     error.value = `Error obtaining access token: ${err.message}`
     console.error('Error details:', err) // Log detailed error information
