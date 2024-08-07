@@ -200,6 +200,7 @@ async function reAuthenticate() {
     .update({
       enc_cloud_access_token: encryptedAccessToken,
       enc_cloud_refresh_token: encryptedRefreshToken,
+      token_expires_in: Date.now() + response.expires_in * 1000,
     })
     .eq('id', vault.id)
     .eq('user_id', user.value.id)
