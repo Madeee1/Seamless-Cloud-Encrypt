@@ -1,26 +1,13 @@
-# Nuxt 3 Minimal Starter
+## Initial Setup of Node and NVM
 
-Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
-
-## Initial Setup of Node
-
-1. Run `nvm install 20.12.2` which is the node version
-2. Run `nvm alis default 20.12.2` and `nvm use default`
+1. Install Node version 20.12.2 or equivalent
+2. Install Yarn through NPM bundled with Node
 3. `yarn` to install the dependencies
-4. `yarn dev` to start up the dev server
+4. `yarn dev` to start up the development server
 
 ## In development
 
 - Use Prettier extension to enable code formatting
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# yarn
-yarn dev
-```
 
 ## Production
 
@@ -37,5 +24,3 @@ Locally preview production build:
 # yarn
 yarn preview
 ```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
