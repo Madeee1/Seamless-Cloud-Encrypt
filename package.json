@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "fix": "eslint --fix",
-    "test": "vitest"
+    "test": "vitest --color | grep --color=always -v 'Suspense'"
   },
   "dependencies": {
     "@nuxt/ui": "^2.16.0",
