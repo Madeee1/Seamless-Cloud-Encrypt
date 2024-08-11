@@ -5,23 +5,15 @@
 const timeoutId = ref('')
 const vault = useVaultStore()
 
+import { startIdleTimer } from '~/utils/timer-auto-lock'
+
 function handleIdle() {
   vault.$reset()
   navigateTo('/dashboard')
 }
 
-function startIdleTimer() {
-  const idleTime = vault.idleTime * 60000
-
-  clearTimeout(timeoutId.value)
-
-  timeoutId.value = setTimeout(() => {
-    handleIdle()
-  }, idleTime)
-}
-
 function resetIdleTimer() {
-  startIdleTimer()
+  timeoutId.value = startIdleTimer(vault.idleTime, timeoutId.value, handleIdle)
 }
 
 onMounted(() => {
@@ -30,7 +22,7 @@ onMounted(() => {
   window.addEventListener('click', resetIdleTimer)
   window.addEventListener('scroll', resetIdleTimer)
 
-  startIdleTimer()
+  startIdleTimer(vault.idleTime, timeoutId.value, handleIdle)
 })
 
 onBeforeUnmount(() => {
@@ -40,6 +32,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('click', resetIdleTimer)
   window.removeEventListener('scroll', resetIdleTimer)
 
-  clearTimeout(timeoutId)
+  clearTimeout(timeoutId.value)
 })
 </script>

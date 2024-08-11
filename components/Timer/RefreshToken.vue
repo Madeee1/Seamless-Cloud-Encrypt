@@ -7,7 +7,7 @@ import { encrypt } from '~/utils/encryptionUtils'
 import { v4 as uuidv4 } from 'uuid'
 import sha256 from 'crypto-js/sha256'
 import Base64 from 'crypto-js/enc-base64'
-import { checkTokenRefresh } from '~/utils/vault-open'
+import { checkTokenRefresh } from '~/utils/timer-refresh-token'
 
 const createVaultStore = useCreateVaultStore()
 const vault = useVaultStore()
