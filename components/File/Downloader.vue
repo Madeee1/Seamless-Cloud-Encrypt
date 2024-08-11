@@ -37,18 +37,27 @@
             :key="file.id"
             class="flex items-center justify-between bg-gray-100 p-2 rounded mb-2 gap-2"
           >
-            <input v-model="selectedFiles" type="checkbox" :value="file" />
-            <div class="flex items-center">
-              <img
-                v-if="file.thumbnailUrl"
-                :src="file.thumbnailUrl"
-                alt="Thumbnail"
-                class="w-10 h-10 mr-4 rounded"
+            <label
+              class="flex items-center justify-between w-full cursor-pointer"
+            >
+              <input
+                v-model="selectedFiles"
+                type="checkbox"
+                :value="file"
+                class="mr-2"
               />
-              <span class="font-medium">
-                {{ file.oriFilename }}
-              </span>
-            </div>
+              <div class="flex items-center">
+                <img
+                  v-if="file.thumbnailUrl"
+                  :src="file.thumbnailUrl"
+                  alt="Thumbnail"
+                  class="w-10 h-10 mr-4 rounded"
+                />
+                <span class="font-medium">
+                  {{ file.oriFilename }}
+                </span>
+              </div>
+            </label>
           </li>
         </ul>
       </div>

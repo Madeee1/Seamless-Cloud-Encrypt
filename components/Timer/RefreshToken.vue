@@ -7,6 +7,7 @@ import { encrypt } from '~/utils/encryptionUtils'
 import { v4 as uuidv4 } from 'uuid'
 import sha256 from 'crypto-js/sha256'
 import Base64 from 'crypto-js/enc-base64'
+import { checkTokenRefresh } from '~/utils/timer-refresh-token'
 
 const createVaultStore = useCreateVaultStore()
 const vault = useVaultStore()
@@ -19,11 +20,21 @@ const refreshToken = ref(vault.cloudRefreshToken)
 
 onMounted(() => {
   if (vault.tokenExpiresIn) {
-    checkTokenRefresh()
+    checkTokenRefresh(
+      vault.tokenExpiresIn,
+      vault.id,
+      reAuthenticate,
+      connectToOneDrive
+    )
   }
   intervalId.value = setInterval(() => {
     if (vault.tokenExpiresIn) {
-      checkTokenRefresh()
+      checkTokenRefresh(
+        vault.tokenExpiresIn,
+        vault.id,
+        reAuthenticate,
+        connectToOneDrive
+      )
     }
   }, 60 * 1000) // Do this every 1 minute
 })
@@ -127,20 +138,6 @@ function connectToOneDrive() {
   } catch (err) {
     console.error(err)
     errorMessage.value = `Error connecting to OneDrive: ${err}`
-  }
-}
-
-async function checkTokenRefresh() {
-  const timeLeft = vault.tokenExpiresIn - Date.now()
-  if (timeLeft < 5 * 60 * 1000) {
-    // < 5 min refresh
-    try {
-      await reAuthenticate()
-    } catch (err) {
-      console.error(err)
-      sessionStorage.setItem('vaultID', vault.id)
-      connectToOneDrive()
-    }
   }
 }
 
