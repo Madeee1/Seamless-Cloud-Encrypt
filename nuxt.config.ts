@@ -1,11 +1,14 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
+
   routeRules: {
     '/': { prerender: true },
     '/dashboard/**': { prerender: false },
   },
+
   css: ['@/assets/css/main.css'],
+
   modules: [
     '@nuxt/ui',
     '@nuxtjs/supabase',
@@ -14,6 +17,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@pinia-plugin-persistedstate/nuxt',
   ],
+
   supabase: {
     redirect: true,
     redirectOptions: {
@@ -24,9 +28,11 @@ export default defineNuxtConfig({
       cookieRedirect: true,
     },
   },
+
   colorMode: {
     preference: 'light',
   },
+
   security: {
     headers: {
       crossOriginEmbedderPolicy:
@@ -34,6 +40,7 @@ export default defineNuxtConfig({
     },
     removeLoggers: process.env.NODE_ENV === 'development' ? false : undefined,
   },
+
   robots: {
     rules: [
       {
@@ -46,4 +53,6 @@ export default defineNuxtConfig({
       },
     ],
   },
+
+  compatibilityDate: '2024-08-12',
 })

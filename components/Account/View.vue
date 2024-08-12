@@ -76,8 +76,10 @@ async function updateAccountEmail() {
   })
   // TODO: handle error correctly
   if (error) {
-    console.error(error)
+    alert(error.message)
   } else {
+    // Send out an alert to the user to check their email for the link
+    alert('Check your email for the link to confirm the email change')
     navigateTo('/dashboard')
   }
 }
@@ -89,8 +91,9 @@ async function updateAccountPass() {
 
   // TODO: handle error correctly
   if (error) {
-    console.error(error)
+    alert(error.message)
   } else {
+    alert('Password updated successfully')
     navigateTo('/dashboard')
   }
 }

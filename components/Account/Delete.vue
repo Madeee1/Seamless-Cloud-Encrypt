@@ -59,13 +59,10 @@ async function confirmDelete() {
     try {
       const response = await $fetch('/api/vault/account/delete', {
         method: 'POST',
-        body: {},
+        body: {
+          password: password.value,
+        },
       })
-
-      if (!response.ok) {
-        alert('Error deleting user: ${response.statusText}')
-        return
-      }
 
       //signing out the user
       const { error: signOutError } = await supabase.auth.signOut()
@@ -81,7 +78,8 @@ async function confirmDelete() {
       alert('User deleted successfully')
       navigateTo('/')
     } catch (error) {
-      alert('An unexpected error occurred: ' + error.message)
+      // TODO: unspecific error message
+      alert('Error when deleting user')
     }
   } else {
     alert('No user signed in')
