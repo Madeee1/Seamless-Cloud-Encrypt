@@ -28,6 +28,13 @@ describe('encryptionUtils', () => {
     expect(decryptedString).toBe(originalString)
   })
 
+  it('should throw an error when trying to decrypt using the wrong key', async () => {
+    const originalString = 'Hello, World!'
+    const encryptedString = await encrypt(originalString, encryptionKey)
+    const wrongKey = await deriveKeyFromPassword('wrong-password')
+    await expect(decrypt(encryptedString, wrongKey)).rejects.toThrow()
+  })
+
   it('should convert a byte array to a Base64 URL string and back', () => {
     const byteArray = new Uint8Array([72, 101, 108, 108, 111])
     const base64UrlString = toBase64Url(byteArray)
