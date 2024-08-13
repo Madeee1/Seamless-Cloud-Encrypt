@@ -60,6 +60,7 @@
           >Cancel</UButton
         ><UButton
           class="block text-center w-1/6 text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded"
+          :loading="isUpdating"
           @click="confirmUpdate"
           >Confirm</UButton
         >
@@ -104,6 +105,8 @@ const decryptedFiles = ref([])
 const reencryptedFiles = ref([])
 const reencryptedFileNames = ref([])
 
+const isUpdating = ref(false)
+
 async function confirmUpdate() {
   try {
     const response = await $fetch('/api/vault/auth/update', {
@@ -115,6 +118,7 @@ async function confirmUpdate() {
     })
 
     if (response.ok && newPassword.value == newPasswordConfirmation.value) {
+      isUpdating.value = true
       // 1. Download all current files in the cloud folder
       console.log('Downloading Files...')
       await downloadAll()
@@ -146,11 +150,14 @@ async function confirmUpdate() {
       // 8. Update the hashed password attribute in the database
       console.log('Updating Database Password... ')
       await updatePassword()
+
+      isUpdating.value = false
     } else {
       alert('New password confirmation failed.')
       console.log('New password does not match with the confirmation.')
     }
   } catch (error) {
+    isUpdating.value = false
     if (!error.response) {
       console.error(error)
     } else if (error.response.status === 401) {
@@ -187,7 +194,7 @@ async function updatePassword() {
     })
     console.log('Vault password updated successfully.\n ')
     // vault.key = newKey.value
-    alert('Vault password update successfull, vault will be locked now.')
+    alert('Vault password update successful, vault will be locked now.')
     navigateTo('/dashboard')
   }
 }
