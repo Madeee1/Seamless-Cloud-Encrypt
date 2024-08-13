@@ -5,14 +5,20 @@
       <header
         class="bg-main-blue text-gray-200 flex justify-between items-center p-2 border-b-2 border-gray-500"
       >
-        <div class="flex items-center">
-          <button
+        <button
+          class="flex items-center gap-2 ml-2"
+          @click="navigateTo('/dashboard/account')"
+        >
+          <UIcon
+            name="i-heroicons-adjustments-horizontal-solid"
+            class="w-8 h-8"
+          />
+          <div
             class="flex-1 bg-transparent font-semibold text-third-blue text-3xl font-title hover:underline underline-offset-4 decoration-[rgb(255,0,0)]"
-            @click="navigateTo('/dashboard/account')"
           >
             CRYPT<span class="text-gray-200 text-2xl">&</span>GO
-          </button>
-        </div>
+          </div>
+        </button>
         <LogOutButton />
       </header>
 
