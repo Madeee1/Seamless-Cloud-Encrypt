@@ -89,11 +89,15 @@ const user = useSupabaseUser()
 const createVaultStore = useCreateVaultStore()
 
 const vaultPassword = ref('')
-const vaultCloud = ref('')
 
 const errorMessage = ref('')
 
 async function saveCreateVault() {
+  if (createVaultStore.cloudProvider !== 'OneDrive') {
+    alert('Only OneDrive is supported at the moment.')
+    return
+  }
+
   const saltRounds = 10
   const hashPass = await bcrypt.hash(vaultPassword.value, saltRounds)
 

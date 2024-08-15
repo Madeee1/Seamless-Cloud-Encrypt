@@ -40,6 +40,7 @@
         >
         <UButton
           class="block w-1/6 text-lg font-semibold bg-warning-red hover:bg-red-600 text-gray-200 py-1 px-2 rounded"
+          :loading="isDeleting"
           @click="confirmDelete"
           >Confirm Delete</UButton
         >
@@ -58,8 +59,11 @@ const accessToken = vault.cloudAccessToken
 const confirmPassword = ref(false)
 const password = ref('')
 
+const isDeleting = ref(false)
+
 async function confirmDelete() {
   try {
+    isDeleting.value = true
     const folderId = await getFolderIdByName()
 
     // Delete supabase vault
@@ -74,8 +78,10 @@ async function confirmDelete() {
     console.log('Vault Deleted Successfully.')
     alert('Vault Deleted Successfully.')
     vault.$reset()
+    isDeleting.value = false
     navigateTo('/dashboard')
   } catch (error) {
+    isDeleting.value = false
     if (!error.response) {
       console.error(error)
       alert('Network error, try again later!')

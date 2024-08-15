@@ -13,7 +13,7 @@
       class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4"
       role="alert"
     >
-      <p>Error: {{ error }}</p>
+      <p>{{ error }}</p>
     </div>
   </div>
 </template>
@@ -162,7 +162,15 @@ async function getAccessToken(code) {
     window.history.replaceState({}, document.title, '/dashboard/callback')
   } catch (err) {
     error.value = `Error obtaining access token: ${err.message}`
-    console.error('Error details:', err) // Log detailed error information
+    console.log('Error details:', err) // Log detailed error information
+
+    alert(
+      'Error obtaining access token. Please try again. Navigating to dashboard in 5 seconds.'
+    )
+
+    // Wait 5 seconds before redirecting to dashboard
+    await new Promise((resolve) => setTimeout(resolve, 5000))
+    navigateTo('/dashboard')
   }
 }
 
@@ -237,7 +245,15 @@ async function renewAccessToken(code) {
     navigateTo('/dashboard')
   } catch (err) {
     error.value = `Error obtaining access token: ${err.message}`
-    console.error('Error details:', err) // Log detailed error information
+    console.log('Error details:', err) // Log detailed error information
+
+    alert(
+      'Error renewing access token. Please try again. Navigating to dashboard in 5 seconds.'
+    )
+
+    // Wait 5 seconds before redirecting to dashboard
+    await new Promise((resolve) => setTimeout(resolve, 5000))
+    navigateTo('/dashboard')
   }
 }
 </script>
