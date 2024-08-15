@@ -21,6 +21,7 @@
       <div class="pt-5 flex justify-end">
         <UButton
           class="block w-1/6 text-lg font-semibold bg-blue-500 hover:bg-blue-700 text-gray-200 py-1 px-2 rounded"
+          :loading="isLoading"
           @click="setIdleTime"
           >Set Idle Time</UButton
         >
@@ -34,11 +35,20 @@ const user = useSupabaseUser()
 const vault = useVaultStore()
 const idleTime = ref(vault.idleTime)
 
+const isLoading = ref(false)
+
 async function setIdleTime() {
+  isLoading.value = true
   const { data, error } = await supabase
     .from('vault')
     .update({ idle_time: idleTime.value })
     .eq('id', vault.id)
     .eq('user_id', user.value.id)
+
+  if (error) {
+    alert('Error setting idle time, please try again.')
+  } else {
+    vault.idleTime = idleTime.value
+  }
 }
 </script>

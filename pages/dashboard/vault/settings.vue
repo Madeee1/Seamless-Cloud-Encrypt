@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-4">
     <VaultUpdate />
     <VaultUpdatePassword />
-    <VaultManage />
+    <VaultManageIdleTime />
     <VaultDelete />
     <TimerAutoLock />
     <TimerRefreshToken />
