@@ -39,7 +39,7 @@ const isLoading = ref(false)
 
 async function setIdleTime() {
   isLoading.value = true
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('vault')
     .update({ idle_time: idleTime.value })
     .eq('id', vault.id)
@@ -49,6 +49,7 @@ async function setIdleTime() {
     alert('Error setting idle time, please try again.')
   } else {
     vault.idleTime = idleTime.value
+    isLoading.value = false
   }
 }
 </script>
